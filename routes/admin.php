@@ -138,11 +138,17 @@ Route::middleware(['isadmin', '2fa'])->prefix('admin')->group(function () {
     Route::get('dashboard/pdeposit/{id}', [ManageDepositController::class , 'pdeposit'])->name('pdeposit');
     Route::get('dashboard/viewimage/{id}', [ManageDepositController::class , 'viewdepositimage'])->name('viewdepositimage');
 
-    Route::post('dashboard/pwithdrawal', [ManageWithdrawalController::class , 'pwithdrawal'])->name('pwithdrawal');
+    // Approving/processing/deleting withdrawals is restricted to Super Admins.
+    // Regular admins keep view-only access via the 'mwithdrawals' list above.
+    Route::post('dashboard/pwithdrawal', [ManageWithdrawalController::class , 'pwithdrawal'])
+        ->middleware('issuperadmin')
+        ->name('pwithdrawal');
     Route::delete('dashboard/deletewithdrawal/{id}', [ManageWithdrawalController::class, 'destroy'])
         ->middleware('issuperadmin')
         ->name('deletewithdrawal');
-    Route::get('dashboard/process-withdrawal-request/{id}', [ManageWithdrawalController::class , 'processwithdraw'])->name('processwithdraw');
+    Route::get('dashboard/process-withdrawal-request/{id}', [ManageWithdrawalController::class , 'processwithdraw'])
+        ->middleware('issuperadmin')
+        ->name('processwithdraw');
 
 
     Route::post('dashboard/addagent', [LogicController::class , 'addagent']);
@@ -261,19 +267,25 @@ Route::middleware(['isadmin', '2fa'])->prefix('admin')->group(function () {
     // Admin Trading Pairs Routes (Protected by admin middleware)
     Route::prefix('admin')->name('admin.')->group(function () {
 
-        // Trading Pairs Management
+        // View-only: any authenticated admin may list trading pairs.
         Route::get('/trading-pairs', [TradingPairsController::class, 'index'])->name('trading-pairs.index');
-        Route::post('/trading-pairs', [TradingPairsController::class, 'store'])->name('trading-pairs.store');
-        Route::get('trading-pairs/create', [TradingPairsController::class, 'create'])->name('trading-pairs.create');
 
-        Route::get('/trading-pairs/{tradingPair}/edit', [TradingPairsController::class, 'edit'])->name('trading-pairs.edit');
-        Route::put('/trading-pairs/{tradingPair}', [TradingPairsController::class, 'update'])->name('trading-pairs.update');
-        Route::delete('/trading-pairs/{tradingPair}', [TradingPairsController::class, 'destroy'])->name('trading-pairs.destroy');
+        // Mutations: adding, editing, deleting, toggling, reordering and price
+        // refreshes are restricted to Super Admins. Regular admins get view-only.
+        Route::middleware('issuperadmin')->group(function () {
+            // Trading Pairs Management
+            Route::post('/trading-pairs', [TradingPairsController::class, 'store'])->name('trading-pairs.store');
+            Route::get('trading-pairs/create', [TradingPairsController::class, 'create'])->name('trading-pairs.create');
 
-        // Trading Pairs Actions
-        Route::post('/trading-pairs/{tradingPair}/toggle-status', [TradingPairsController::class, 'toggleStatus'])->name('trading-pairs.toggle-status');
-        Route::get('/trading-pairs/refresh-prices', [TradingPairsController::class, 'refreshPrices'])->name('trading-pairs.refresh-prices');
-        Route::post('/trading-pairs/update-sort-order', [TradingPairsController::class, 'updateSortOrder'])->name('trading-pairs.update-sort-order');
+            Route::get('/trading-pairs/{tradingPair}/edit', [TradingPairsController::class, 'edit'])->name('trading-pairs.edit');
+            Route::put('/trading-pairs/{tradingPair}', [TradingPairsController::class, 'update'])->name('trading-pairs.update');
+            Route::delete('/trading-pairs/{tradingPair}', [TradingPairsController::class, 'destroy'])->name('trading-pairs.destroy');
+
+            // Trading Pairs Actions
+            Route::post('/trading-pairs/{tradingPair}/toggle-status', [TradingPairsController::class, 'toggleStatus'])->name('trading-pairs.toggle-status');
+            Route::get('/trading-pairs/refresh-prices', [TradingPairsController::class, 'refreshPrices'])->name('trading-pairs.refresh-prices');
+            Route::post('/trading-pairs/update-sort-order', [TradingPairsController::class, 'updateSortOrder'])->name('trading-pairs.update-sort-order');
+        });
     });
 
     // Public API Routes (for user interfaces)

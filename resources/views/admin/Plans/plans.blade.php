@@ -6,6 +6,8 @@ if (Auth('admin')->User()->dashboard_style == "light") {
     $text = "light";
     $bg = 'dark';
 }
+// Only Super Admins may add, edit, delete or toggle trading pairs.
+$isSuperAdmin = Auth('admin')->User()->type === 'Super Admin';
 ?>
 
 @extends('layouts.app')
@@ -25,6 +27,7 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                 <x-danger-alert/>
                 <x-success-alert/>
 
+                @if ($isSuperAdmin)
                 <!-- Add New Pair Button -->
                 <div class="mb-4 row">
                     <div class="col-lg-12">
@@ -33,6 +36,7 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                         </a>
                     </div>
                 </div>
+                @endif
 
                 <!-- Trading Pairs Grid -->
                 <div class="row">
@@ -113,6 +117,7 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                         </span>
                                     </div>
 
+                                    @if ($isSuperAdmin)
                                     <!-- Action Buttons -->
                                     <div class="text-center">
                                         <button class="btn btn-sm btn-primary me-2" onclick="editPair({{ $pair->id }}, 'editPairModal')">
@@ -125,6 +130,7 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                             <i class="fa fa-trash"></i> Delete
                                         </button>
                                     </div>
+                                    @endif
                                 </div>
                             </div>
                         </div>
@@ -134,7 +140,11 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                 <div class="card-body text-center p-5">
                                     <i class="fa fa-chart-line fa-3x text-{{ $text }} opacity-50 mb-3"></i>
                                     <h4 class="text-{{ $text }}">No Trading Pairs Available</h4>
+                                    @if ($isSuperAdmin)
                                     <p class="text-{{ $text }} opacity-75">Click the "Add New Trading Pair" button above to add your first trading pair.</p>
+                                    @else
+                                    <p class="text-{{ $text }} opacity-75">No trading pairs have been configured yet.</p>
+                                    @endif
                                 </div>
                             </div>
                         </div>

@@ -63,10 +63,10 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                         </td>
                                         <td>{{\Carbon\Carbon::parse($withdrawal->created_at)->toDayDateTimeString()}}</td>
                                         <td>
-                                            <a href="{{route('processwithdraw',$withdrawal->id)}}" class="m-1 btn btn-info btn-sm">
-                                                <i class="fa fa-eye"></i> View
-                                            </a>
                                             @if (Auth('admin')->User()->type === 'Super Admin')
+                                                <a href="{{route('processwithdraw',$withdrawal->id)}}" class="m-1 btn btn-info btn-sm">
+                                                    <i class="fa fa-eye"></i> Process
+                                                </a>
                                                 <form action="{{ route('deletewithdrawal', $withdrawal->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this withdrawal request?');">
                                                     @csrf
                                                     @method('DELETE')
@@ -74,6 +74,8 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                                         <i class="fa fa-trash"></i> Delete
                                                     </button>
                                                 </form>
+                                            @else
+                                                <span class="text-muted">View only</span>
                                             @endif
                                         </td>
                                     </tr>
