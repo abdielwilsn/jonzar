@@ -1,10 +1,17 @@
+@php
+    // Single source of truth for branding on this page.
+    $app = $settings->site_name ?? config('app.name');
+    $appLogo = !empty($settings->logo)
+        ? asset('storage/app/public/photos/'.$settings->logo)
+        : null;
+@endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Terms & Conditions | GAL TRHAYDERS AI</title>
-  <meta name="description" content="Terms and Conditions of Use for GAL TRHAYDERS AI trading platform by Great Adetula Limited." />
+  <title>Terms &amp; Conditions | {{ $app }}</title>
+  <meta name="description" content="Terms and Conditions of Use for the {{ $app }} trading platform." />
   <meta name="theme-color" content="#071325" />
   <style>
     :root{
@@ -94,6 +101,11 @@
       box-shadow:var(--shadow);background:rgba(255,255,255,.05);flex:none;
     }
     .brand-logo img{width:100%;height:100%;object-fit:cover;display:block}
+    .brand-logo-fallback{
+      width:100%;height:100%;display:grid;place-items:center;
+      font-weight:950;font-size:1.2rem;color:#fff;
+      background:linear-gradient(135deg,var(--blue),var(--cyan));
+    }
     .brand small{display:block;color:var(--muted);font-size:.76rem;font-weight:800;margin-top:2px}
     .topbar-nav{display:flex;align-items:center;gap:14px}
     .topbar-nav a{
@@ -263,6 +275,19 @@
     .t-contact-row a{color:var(--cyan);transition:color .2s}
     .t-contact-row a:hover{color:var(--gold2)}
 
+    /* Closing CTA */
+    .terms-cta{
+      margin-top:40px;padding:36px 32px;border-radius:var(--radius);
+      text-align:center;position:relative;overflow:hidden;
+      background:linear-gradient(135deg, rgba(42,134,255,.14), rgba(39,215,255,.08), rgba(226,187,115,.08));
+      border:1px solid rgba(255,255,255,.10);
+      box-shadow:var(--shadow);
+    }
+    .terms-cta h3{font-size:1.35rem;font-weight:950;letter-spacing:-.02em;margin-bottom:8px}
+    .terms-cta p{color:var(--muted);font-size:.92rem;font-weight:700;margin-bottom:20px}
+    .terms-cta-actions{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+    .terms-cta-actions a{padding:12px 24px;border-radius:14px;font-weight:900;font-size:.9rem;transition:.25s ease}
+
     /* Footer */
     .terms-footer{
       text-align:center;margin-top:44px;
@@ -307,18 +332,22 @@
   <!-- Topbar -->
   <header class="topbar">
     <div class="topbar-inner">
-      <a href="index.html" class="brand">
+      <a href="{{ route('home') }}" class="brand">
         <div class="brand-logo">
-          <img src="https://res.cloudinary.com/draqpi1df/image/upload/f_auto,q_auto/logo.jpeg_ylmvmx" alt="GAL TRHAYDERS logo">
+          @if($appLogo)
+            <img src="{{ $appLogo }}" alt="{{ $app }} logo">
+          @else
+            <span class="brand-logo-fallback">{{ strtoupper(substr($app, 0, 1)) }}</span>
+          @endif
         </div>
         <div>
-          GAL TRHAYDERS AI
+          {{ $app }}
           <small>Modern Broker Experience</small>
         </div>
       </a>
       <nav class="topbar-nav">
-        <a class="btn-ghost" href="index.html">Home</a>
-        <a class="btn-secondary" href="https://trhayders.com/register" target="_blank" rel="noopener">Signup</a>
+        <a class="btn-ghost" href="{{ route('home') }}">Home</a>
+        <a class="btn-secondary" href="{{ route('register') }}">Signup</a>
       </nav>
     </div>
   </header>
@@ -327,15 +356,22 @@
   <div class="terms-page">
     <div class="wrap">
 
-      <a href="index.html" class="back-link reveal">
+      <a href="{{ route('home') }}" class="back-link reveal">
         <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
         Back to Home
       </a>
 
       <!-- Hero -->
       <div class="terms-hero reveal">
-        <div class="terms-hero-icon">📄</div>
+        <div class="terms-hero-icon">
+          @if($appLogo)
+            <img src="{{ $appLogo }}" alt="{{ $app }}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">
+          @else
+            📄
+          @endif
+        </div>
         <h1>Terms &amp; <span class="grad">Conditions</span></h1>
+        <p style="color:var(--muted);font-weight:800;margin:2px 0 16px">{{ $app }} Platform</p>
         <div class="terms-meta">Effective Date: 7th April, 2026</div>
       </div>
 
@@ -373,8 +409,8 @@
         <div class="t-section reveal" id="s1">
           <span class="t-section-num">Section 01</span>
           <h2>Introduction</h2>
-          <p>Welcome to GAL TRHAYDERS, a proprietary trading technology platform owned and operated by Great Adetula Limited (GAL), a company duly registered under the laws of the Federal Republic of Nigeria.</p>
-          <p>These Terms and Conditions ("Terms") govern your access to and use of the GAL TRHAYDERS platform, including our website, mobile applications, trading tools, artificial intelligence systems, and related services (collectively referred to as the "Platform").</p>
+          <p>Welcome to {{ $app }}, a proprietary trading technology platform.</p>
+          <p>These Terms and Conditions ("Terms") govern your access to and use of the {{ $app }} platform, including our website, mobile applications, trading tools, artificial intelligence systems, and related services (collectively referred to as the "Platform").</p>
           <p>By accessing or using this Platform, you agree to be bound by these Terms. If you do not agree, you must not use the Platform.</p>
         </div>
 
@@ -383,8 +419,8 @@
           <span class="t-section-num">Section 02</span>
           <h2>Definitions</h2>
           <ul>
-            <li><strong>"Company"</strong> refers to Great Adetula Limited (GAL).</li>
-            <li><strong>"Platform"</strong> refers to GAL TRHAYDERS AI trading system and all related services.</li>
+            <li><strong>"Company"</strong> refers to {{ $app }}.</li>
+            <li><strong>"Platform"</strong> refers to the {{ $app }} trading system and all related services.</li>
             <li><strong>"User" / "You"</strong> refers to any individual or entity accessing the Platform.</li>
             <li><strong>"Services"</strong> refers to automated trading tools, AI trading bot, signals, analytics, and related offerings.</li>
             <li><strong>"Account"</strong> refers to your registered profile on the Platform.</li>
@@ -409,7 +445,7 @@
         <div class="t-section reveal" id="s4">
           <span class="t-section-num">Section 04</span>
           <h2>Nature of Services (Important Disclaimer)</h2>
-          <p>GAL TRHAYDERS provides technology tools for automated trading and does NOT:</p>
+          <p>{{ $app }} provides technology tools for automated trading and does NOT:</p>
           <ul>
             <li>Act as a licensed financial advisor</li>
             <li>Guarantee profits or returns</li>
@@ -452,7 +488,7 @@
           <span class="t-section-num">Section 07</span>
           <h2>Financial Transactions</h2>
           <p>Users are solely responsible for funding their trading accounts, choosing brokers or exchanges, and managing deposits and withdrawals.</p>
-          <p>GAL TRHAYDERS does NOT hold user funds directly (except where explicitly stated), act as a financial custodian, or guarantee liquidity or execution.</p>
+          <p>{{ $app }} does NOT hold user funds directly (except where explicitly stated), act as a financial custodian, or guarantee liquidity or execution.</p>
           <div class="t-warn t-info">
             <p>All payments made to the Company (if applicable) are subject to non-refundable policies, except otherwise stated.</p>
           </div>
@@ -481,7 +517,7 @@
         <div class="t-section reveal" id="s10">
           <span class="t-section-num">Section 10</span>
           <h2>Intellectual Property</h2>
-          <p>All content — including software, algorithms, branding, logos, and AI systems — remains the exclusive property of Great Adetula Limited (GAL).</p>
+          <p>All content — including software, algorithms, branding, logos, and AI systems — remains the exclusive property of {{ $app }}.</p>
           <p>You may NOT copy, reproduce, distribute, reverse-engineer the system, or use the technology for competing purposes.</p>
         </div>
 
@@ -505,7 +541,7 @@
         <div class="t-section reveal" id="s13">
           <span class="t-section-num">Section 13</span>
           <h2>Limitation of Liability</h2>
-          <p>To the fullest extent permitted under Nigerian law, Great Adetula Limited (GAL) shall NOT be liable for direct or indirect financial losses, loss of profits or revenue, data loss or system errors, or third-party service failures.</p>
+          <p>To the fullest extent permitted by applicable law, {{ $app }} shall NOT be liable for direct or indirect financial losses, loss of profits or revenue, data loss or system errors, or third-party service failures.</p>
           <div class="t-warn">
             <p>Your use of the Platform is at your sole risk.</p>
           </div>
@@ -515,7 +551,7 @@
         <div class="t-section reveal" id="s14">
           <span class="t-section-num">Section 14</span>
           <h2>Indemnification</h2>
-          <p>You agree to indemnify and hold harmless Great Adetula Limited from claims arising from your use of the Platform, violation of these Terms, or breach of applicable laws.</p>
+          <p>You agree to indemnify and hold harmless {{ $app }} from claims arising from your use of the Platform, violation of these Terms, or breach of applicable laws.</p>
         </div>
 
         <!-- 15 -->
@@ -557,28 +593,38 @@
         <div class="t-section reveal" id="s20">
           <span class="t-section-num">Section 20</span>
           <h2>Contact Information</h2>
-          <p>For inquiries, support, or complaints, contact Great Adetula Limited (GAL):</p>
+          <p>For inquiries, support, or complaints, contact the {{ $app }} team:</p>
           <div class="t-contact">
-            <div class="t-contact-row">
-              <span class="ic">📞</span>
-              <span>07080069456 &nbsp;/&nbsp; +1 559 998-9794</span>
-            </div>
+            @if(!empty($settings->contact_email))
             <div class="t-contact-row">
               <span class="ic">📧</span>
-              <a href="mailto:trhayders247@gmail.com">trhayders247@gmail.com</a>
+              <a href="mailto:{{ $settings->contact_email }}">{{ $settings->contact_email }}</a>
             </div>
+            @endif
+            @if(!empty($settings->site_address))
             <div class="t-contact-row">
               <span class="ic">🌐</span>
-              <a href="https://www.trhayders.com" target="_blank" rel="noopener">www.trhayders.com</a>
+              <a href="{{ $settings->site_address }}" target="_blank" rel="noopener">{{ preg_replace('#^https?://#', '', rtrim($settings->site_address, '/')) }}</a>
             </div>
+            @endif
           </div>
         </div>
 
       </div><!-- /terms-card -->
 
+      <!-- Closing CTA -->
+      <div class="terms-cta reveal">
+        <h3>Ready to get started?</h3>
+        <p>By creating an account you confirm that you have read and agree to these Terms.</p>
+        <div class="terms-cta-actions">
+          <a class="btn-secondary" href="{{ route('register') }}">Create Account</a>
+          <a class="btn-ghost" href="{{ route('home') }}">Back to Home</a>
+        </div>
+      </div>
+
       <!-- Footer -->
       <div class="terms-footer reveal">
-        &copy; 2026 GAL TRHAYDERS AI. A product of Great Adetula Limited. All rights reserved.
+        &copy; {{ date('Y') }} {{ $app }}. All rights reserved.
       </div>
 
     </div><!-- /wrap -->
