@@ -1,9 +1,6 @@
 @php
     // Single source of truth for branding on this page.
     $app = $settings->site_name ?? config('app.name');
-    $appLogo = !empty($settings->logo)
-        ? asset('storage/app/public/photos/'.$settings->logo)
-        : null;
 @endphp
 <!DOCTYPE html>
 <html lang="en">
@@ -95,17 +92,6 @@
       padding:14px 0;
     }
     .brand{display:flex;align-items:center;gap:12px;font-weight:950;letter-spacing:.01em}
-    .brand-logo{
-      width:46px;height:46px;border-radius:14px;overflow:hidden;
-      border:1px solid rgba(255,255,255,.12);
-      box-shadow:var(--shadow);background:rgba(255,255,255,.05);flex:none;
-    }
-    .brand-logo img{width:100%;height:100%;object-fit:cover;display:block}
-    .brand-logo-fallback{
-      width:100%;height:100%;display:grid;place-items:center;
-      font-weight:950;font-size:1.2rem;color:#fff;
-      background:linear-gradient(135deg,var(--blue),var(--cyan));
-    }
     .brand small{display:block;color:var(--muted);font-size:.76rem;font-weight:800;margin-top:2px}
     .topbar-nav{display:flex;align-items:center;gap:14px}
     .topbar-nav a{
@@ -316,7 +302,6 @@
       .terms-card{padding:24px 18px}
       .toc-grid{grid-template-columns:1fr}
       .topbar-inner{padding:12px 0}
-      .brand-logo{width:38px;height:38px;border-radius:12px}
       .brand{font-size:.92rem}
       .brand small{font-size:.7rem}
     }
@@ -333,13 +318,6 @@
   <header class="topbar">
     <div class="topbar-inner">
       <a href="{{ route('home') }}" class="brand">
-        <div class="brand-logo">
-          @if($appLogo)
-            <img src="{{ $appLogo }}" alt="{{ $app }} logo">
-          @else
-            <span class="brand-logo-fallback">{{ strtoupper(substr($app, 0, 1)) }}</span>
-          @endif
-        </div>
         <div>
           {{ $app }}
           <small>Modern Broker Experience</small>
@@ -363,13 +341,7 @@
 
       <!-- Hero -->
       <div class="terms-hero reveal">
-        <div class="terms-hero-icon">
-          @if($appLogo)
-            <img src="{{ $appLogo }}" alt="{{ $app }}" style="width:100%;height:100%;object-fit:cover;border-radius:inherit">
-          @else
-            📄
-          @endif
-        </div>
+        <div class="terms-hero-icon">📄</div>
         <h1>Terms &amp; <span class="grad">Conditions</span></h1>
         <p style="color:var(--muted);font-weight:800;margin:2px 0 16px">{{ $app }} Platform</p>
         <div class="terms-meta">Effective Date: 7th April, 2026</div>
