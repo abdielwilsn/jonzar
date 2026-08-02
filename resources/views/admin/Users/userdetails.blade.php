@@ -31,11 +31,9 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                               Actions
                                             </button>
                                             <div class="dropdown-menu dropdown-menu-lg-right">
-                                                @if (Auth('admin')->User()->type == "Super Admin")
                                                     <a class="dropdown-item" href="{{ route('admin.user-trades', $user->id) }}">View Trades</a>
                                                     <a class="dropdown-item" href="{{ route('admin.user-referrals', $user->id) }}">Manage Referrals</a>
 
-                                                @endif
                                                 <a class="dropdown-item" href="{{ route('loginactivity', $user->id) }}">Login Activity</a>
                                                 @if($user->status==NULL || $user->status=='blocked')
                                                 <a class="dropdown-item" href="{{ url('admin/dashboard/uunblock') }}/{{$user->id}}">Unblock</a>
@@ -56,11 +54,13 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                                 @if (Auth('admin')->User()->type == "Super Admin")
 
                                                 <a href="#"  data-toggle="modal" data-target="#topupModal" class="dropdown-item">Credit/Debit</a>
+
+                                                       @endif
                                                 {{-- <a href="#" data-toggle="modal" data-target="#resetpswdModal"  class="dropdown-item">Reset Password</a> --}}
                                                 <a href="#" data-toggle="modal" data-target="#clearacctModal" class="dropdown-item">Clear Account</a>
 
 
-                                                @endif
+
                                                 {{-- <a href="#" data-toggle="modal" data-target="#TradingModal" class="dropdown-item">Add Trading History</a> --}}
                                                 <a href="#" data-toggle="modal" data-target="#edituser" class="dropdown-item">Edit</a>
                                                 <a href="#" data-toggle="modal" data-target="#sendmailtooneuserModal" class="dropdown-item">Send Email</a>

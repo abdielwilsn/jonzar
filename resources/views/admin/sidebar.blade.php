@@ -116,7 +116,10 @@
                         </ul>
                     </div>
                 </li>
+                @endif
 
+                {{-- Settings menu is visible to all admins; App Settings is open to
+                     everyone, the more sensitive sub-items stay Super Admin only. --}}
                 <li class="nav-item {{ (request()->routeIs('appsettingshow')) ? 'active' : '' }} {{ (request()->routeIs('termspolicy')) ? 'active' : '' }} {{ (request()->routeIs('refsetshow')) ? 'active' : '' }} {{ (request()->routeIs('paymentview')) ? 'active' : '' }} {{ (request()->routeIs('subview')) ? 'active' : '' }} {{ (request()->routeIs('frontpage')) ? 'active' : '' }} {{ (request()->routeIs('allipaddress')) ? 'active' : '' }} {{ (request()->routeIs('ipaddress')) ? 'active' : '' }} {{ (request()->routeIs('editpaymethod')) ? 'active' : '' }} {{ (request()->routeIs('managecryptoasset')) ? 'active' : '' }}">
                     <a data-toggle="collapse" href="#settings">
                         <i class="fa fa-cog"></i>
@@ -136,11 +139,13 @@
                                 </a>
 
                             </li>
+                            @if (Auth('admin')->User()->type == "Super Admin")
                             <li>
                                 <a href="{{route('paymentview')}}">
                                     <span class="sub-item">Payment Settings</span>
                                 </a>
                             </li>
+                            @endif
                             {{-- <li>
                                 <a href="{{route('managecryptoasset')}}">
                                     <span class="sub-item">Exchange Settings</span>
@@ -156,11 +161,13 @@
                                     <span class="sub-item">Frontend Settings</span>
                                 </a>
                             </li> --}}
+                            @if (Auth('admin')->User()->type == "Super Admin")
                             <li>
                                 <a href="{{ route('termspolicy') }}">
                                     <span class="sub-item">Terms and Privacy</span>
                                 </a>
                             </li>
+                            @endif
                             {{-- <li>
                                 <a href="{{ url('/admin/dashboard/ipaddress') }}">
                                     <span class="sub-item">IP Address</span>
@@ -172,7 +179,6 @@
 
 
 
-                @endif
             </ul>
         </div>
     </div>
