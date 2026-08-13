@@ -426,6 +426,17 @@ class TradingPairsController extends Controller
     {
         $user = Auth::user();
 
+        // Duration bounds: the minimum is the pair's investment_duration, the
+        // maximum is max_investment_duration (falling back to the minimum for a
+        // fixed-duration pair). The previous code referenced a non-existent
+        // `min_investment_duration` column, so it silently allowed a 1-day
+        // minimum regardless of the pair's configured minimum.
+        $minDuration = (int) $tradingPair->investment_duration;
+        $maxDuration = (int) ($tradingPair->max_investment_duration ?: $tradingPair->investment_duration);
+        if ($maxDuration < $minDuration) {
+            $maxDuration = $minDuration;
+        }
+
         $validator = Validator::make($request->all(), [
             'amount' => [
                 'required',
@@ -441,9 +452,13 @@ class TradingPairsController extends Controller
             'duration' => [
                 'required',
                 'integer',
-                'min:' . ($tradingPair->min_investment_duration ?? 1),
-                'max:' . $tradingPair->max_investment_duration,
-            ]
+                'min:' . $minDuration,
+                'max:' . $maxDuration,
+            ],
+        ], [
+            'duration.integer' => 'Duration must be a whole number of days.',
+            'duration.min' => "Duration must be at least {$minDuration} day(s).",
+            'duration.max' => "Duration cannot exceed {$maxDuration} day(s).",
         ]);
 
         if ($validator->fails()) {

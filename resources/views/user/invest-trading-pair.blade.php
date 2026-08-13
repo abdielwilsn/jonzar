@@ -122,25 +122,37 @@ if (Auth::user()->dashboard_style == "light") {
                                     $durMax = (int) $tradingPair->max_investment_duration;
                                     $durVal = (int) old('duration', $durMin);
                                 @endphp
-                                <div class="duration-slider-wrap">
-                                    <div class="duration-box">
-                                        <span class="duration-box-value" id="durationDisplay">{{ $durVal }}</span>
-                                        <span class="duration-box-label">{{ $durVal > 1 ? 'days' : 'day' }}</span>
+                                @if ($durMax > $durMin)
+                                    <div class="amount-input-wrapper">
+                                        <input
+                                            type="number"
+                                            name="duration"
+                                            id="durationInput"
+                                            class="amount-input"
+                                            min="{{ $durMin }}"
+                                            max="{{ $durMax }}"
+                                            step="1"
+                                            value="{{ $durVal }}"
+                                            inputmode="numeric"
+                                            autocomplete="off"
+                                            placeholder="{{ $durMin }}"
+                                            required
+                                            aria-label="Trade duration in days"
+                                        >
+                                        <span class="currency-symbol" id="durationLabel">{{ $durVal == 1 ? 'day' : 'days' }}</span>
                                     </div>
-                                    @if ($durMax > $durMin)
-                                        <input type="range" name="duration" id="durationSlider"
-                                               class="duration-slider"
-                                               min="{{ $durMin }}" max="{{ $durMax }}" step="1"
-                                               value="{{ $durVal }}">
-                                        <div class="duration-slider-ends">
-                                            <span>{{ $durMin }} day{{ $durMin > 1 ? 's' : '' }}</span>
-                                            <span>{{ $durMax }} days</span>
-                                        </div>
-                                    @else
-                                        <input type="hidden" name="duration" id="durationSlider" value="{{ $durMin }}">
-                                        <p class="duration-fixed-note">Fixed duration of {{ $durMin }} day{{ $durMin > 1 ? 's' : '' }}.</p>
-                                    @endif
-                                </div>
+                                    <div class="amount-range">
+                                        <span>Min: {{ $durMin }} day{{ $durMin > 1 ? 's' : '' }}</span>
+                                        <span>Max: {{ $durMax }} days</span>
+                                    </div>
+                                @else
+                                    <div class="amount-input-wrapper">
+                                        <input type="number" class="amount-input" value="{{ $durMin }}" disabled aria-label="Fixed trade duration">
+                                        <span class="currency-symbol">{{ $durMin == 1 ? 'day' : 'days' }}</span>
+                                    </div>
+                                    <input type="hidden" name="duration" id="durationInput" value="{{ $durMin }}">
+                                    <p class="duration-fixed-note">Fixed duration of {{ $durMin }} day{{ $durMin > 1 ? 's' : '' }}.</p>
+                                @endif
                                 <p class="helper-text">
                                     <i class="fa fa-info-circle"></i>
                                     Longer durations may qualify for higher returns
@@ -367,22 +379,6 @@ if (Auth::user()->dashboard_style == "light") {
     .error-text{display:block;margin-top:8px;color:var(--danger);font-size:.82rem}
 
     /* Duration */
-    /* Duration slider */
-    .duration-slider-wrap{display:flex;flex-direction:column;gap:14px}
-    .duration-box{align-self:center;display:flex;align-items:baseline;gap:8px;min-width:140px;justify-content:center;
-        background:var(--elev);border:1px solid var(--border);border-radius:16px;padding:14px 26px}
-    .duration-box-value{font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:2.1rem;line-height:1;color:var(--text)}
-    .duration-box-label{color:var(--muted);font-weight:600;font-size:.95rem}
-    .duration-slider{-webkit-appearance:none;appearance:none;width:100%;height:8px;border-radius:999px;outline:none;cursor:pointer;
-        background:var(--dur-track);border:none;margin:2px 0}
-    .duration-slider::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:24px;height:24px;border-radius:50%;
-        background:var(--blue);border:3px solid #fff;box-shadow:0 3px 10px rgba(37,99,235,.5);cursor:pointer;margin-top:-8px}
-    .duration-slider::-webkit-slider-runnable-track{height:8px;border-radius:999px;background:transparent}
-    .duration-slider::-moz-range-thumb{width:22px;height:22px;border-radius:50%;background:var(--blue);border:3px solid #fff;box-shadow:0 3px 10px rgba(37,99,235,.5);cursor:pointer}
-    .duration-slider::-moz-range-track{height:8px;border-radius:999px;background:var(--dur-track)}
-    .duration-slider::-moz-range-progress{height:8px;border-radius:999px;background:var(--blue)}
-    .duration-slider:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(37,99,235,.25)}
-    .duration-slider-ends{display:flex;justify-content:space-between;color:var(--faint);font-size:.78rem}
     .duration-fixed-note{margin:0;text-align:center;color:var(--muted);font-size:.85rem}
     .helper-text{display:flex;align-items:center;gap:7px;margin:12px 0 0;color:var(--faint);font-size:.82rem}
 
@@ -448,8 +444,8 @@ if (Auth::user()->dashboard_style == "light") {
 
         function updatePreview() {
             const amount = parseFloat(amountInput.value) || 0;
-            const durationInput = document.getElementById('durationSlider');
-            const duration = durationInput ? parseInt(durationInput.value, 10) : 1;
+            const durationEl = document.getElementById('durationInput');
+            const duration = durationEl ? (parseInt(durationEl.value, 10) || 0) : 1;
 
             previewAmount.textContent = `${currency}${amount.toFixed(2)}`;
             previewDuration.textContent = `${duration} day${duration > 1 ? 's' : ''}`;
@@ -764,21 +760,27 @@ if (Auth::user()->dashboard_style == "light") {
             updatePreview();
         });
 
-        const durationSlider = document.getElementById('durationSlider');
-        const durationDisplay = document.getElementById('durationDisplay');
-        function setSliderFill(el) {
-            if (!el || el.type !== 'range') { return; }
-            const min = +el.min, max = +el.max, val = +el.value;
-            const pct = max > min ? ((val - min) / (max - min)) * 100 : 100;
-            el.style.background = 'linear-gradient(90deg, var(--blue) ' + pct + '%, var(--dur-track) ' + pct + '%)';
-        }
-        if (durationSlider) {
-            setSliderFill(durationSlider);
-            durationSlider.addEventListener('input', function() {
-                if (durationDisplay) { durationDisplay.textContent = this.value; }
-                setSliderFill(this);
+        const durationInput = document.getElementById('durationInput');
+        const durationLabel = document.getElementById('durationLabel');
+        if (durationInput && durationInput.type === 'number') {
+            const durMin = parseInt(durationInput.min, 10);
+            const durMax = parseInt(durationInput.max, 10);
+            const syncDuration = () => {
+                const v = parseInt(durationInput.value, 10);
+                if (durationLabel && !isNaN(v)) { durationLabel.textContent = v === 1 ? 'day' : 'days'; }
                 updatePreview();
+            };
+            // Let the user type freely; only coerce to an integer within bounds
+            // when they leave the field so partial input isn't fought while typing.
+            durationInput.addEventListener('input', syncDuration);
+            durationInput.addEventListener('blur', function() {
+                let v = parseInt(durationInput.value, 10);
+                if (isNaN(v)) { v = durMin; }
+                v = Math.min(durMax, Math.max(durMin, v));
+                durationInput.value = v;
+                syncDuration();
             });
+            syncDuration();
         }
 
         document.addEventListener('visibilitychange', () => {
