@@ -146,8 +146,9 @@ Route::middleware(['isadmin', '2fa'])->prefix('admin')->group(function () {
     Route::post('dashboard/pwithdrawal', [ManageWithdrawalController::class , 'pwithdrawal'])
         ->middleware('issuperadmin')
         ->name('pwithdrawal');
+    // Deleting a withdrawal request is available to all admins (approving it
+    // via pwithdrawal remains Super-Admin-only above).
     Route::delete('dashboard/deletewithdrawal/{id}', [ManageWithdrawalController::class, 'destroy'])
-        ->middleware('issuperadmin')
         ->name('deletewithdrawal');
     Route::get('dashboard/process-withdrawal-request/{id}', [ManageWithdrawalController::class , 'processwithdraw'])
         ->middleware('issuperadmin')

@@ -67,16 +67,14 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                                 <a href="{{route('processwithdraw',$withdrawal->id)}}" class="m-1 btn btn-info btn-sm">
                                                     <i class="fa fa-eye"></i> Process
                                                 </a>
-                                                <form action="{{ route('deletewithdrawal', $withdrawal->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this withdrawal request?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="m-1 btn btn-danger btn-sm">
-                                                        <i class="fa fa-trash"></i> Delete
-                                                    </button>
-                                                </form>
-                                            @else
-                                                <span class="text-muted">View only</span>
                                             @endif
+                                            <form action="{{ route('deletewithdrawal', $withdrawal->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this withdrawal request?');">
+                                                @csrf
+                                                @method('DELETE')
+                                                <button type="submit" class="m-1 btn btn-danger btn-sm">
+                                                    <i class="fa fa-trash"></i> Delete
+                                                </button>
+                                            </form>
                                         </td>
                                     </tr>
                                     @endforeach
