@@ -31,6 +31,39 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                         </div>
                                     </div>
                                 </div>
+                                @php
+                                    $completedTrades = $investments->where('status', 'completed');
+                                    $totalInvested   = $investments->sum('amount');
+                                    $totalProfit     = $completedTrades->sum('profit');
+                                @endphp
+                                <div class="row mt-3">
+                                    <div class="col-md-3 col-6 mb-2">
+                                        <div class="p-3 card bg-{{ $bg }} border">
+                                            <small class="text-{{ $text }} opacity-75 d-block">Total Trades</small>
+                                            <h4 class="text-{{ $text }} mb-0">{{ $investments->count() }}</h4>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-6 mb-2">
+                                        <div class="p-3 card bg-{{ $bg }} border">
+                                            <small class="text-{{ $text }} opacity-75 d-block">Active</small>
+                                            <h4 class="text-{{ $text }} mb-0">{{ $investments->where('status', 'active')->count() }}</h4>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-6 mb-2">
+                                        <div class="p-3 card bg-{{ $bg }} border">
+                                            <small class="text-{{ $text }} opacity-75 d-block">Total Invested</small>
+                                            <h4 class="text-{{ $text }} mb-0">{{ $settings->currency }}{{ number_format($totalInvested, 2) }}</h4>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3 col-6 mb-2">
+                                        <div class="p-3 card bg-{{ $bg }} border">
+                                            <small class="text-{{ $text }} opacity-75 d-block">Total Profit (completed)</small>
+                                            <h4 class="mb-0" style="color: {{ $totalProfit >= 0 ? '#28a745' : '#dc3545' }}">
+                                                {{ $totalProfit >= 0 ? '+' : '-' }}{{ $settings->currency }}{{ number_format(abs($totalProfit), 2) }}
+                                            </h4>
+                                        </div>
+                                    </div>
+                                </div>
                                 <div class="mt-4">
                                     @if ($investments->isEmpty())
                                         <div class="alert alert-info text-{{ $text }}">
@@ -43,6 +76,7 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                                     <tr>
                                                         <th>Trading Pair</th>
                                                         <th>Amount</th>
+                                                        <th>Profit / Return</th>
                                                         <th>Status</th>
                                                         <th>Start Date</th>
                                                         <th>End Date</th>
@@ -52,8 +86,18 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                                 <tbody>
                                                     @foreach ($investments as $investment)
                                                         <tr>
-                                                            <td>{{ $investment->tradingPair->pair_name }}</td>
+                                                            <td>{{ optional($investment->tradingPair)->pair_name ?? '—' }}</td>
                                                             <td>{{ $settings->currency }}{{ number_format($investment->amount, 2) }}</td>
+                                                            <td>
+                                                                @if ($investment->status == 'completed')
+                                                                    @php $p = (float) $investment->profit; @endphp
+                                                                    <span class="fw-bold" style="color: {{ $p >= 0 ? '#28a745' : '#dc3545' }}">
+                                                                        {{ $p >= 0 ? '+' : '-' }}{{ $settings->currency }}{{ number_format(abs($p), 2) }}
+                                                                    </span>
+                                                                @else
+                                                                    <span class="text-{{ $text }} opacity-50">Pending</span>
+                                                                @endif
+                                                            </td>
                                                             <td>
                                                                 @if ($investment->status == 'active')
                                                                     <span class="badge badge-success">Active</span>
