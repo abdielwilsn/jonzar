@@ -48,7 +48,7 @@ class ViewsController extends Controller
             if ($usf->ref_link == '') {
                 User::where('id', $usf->id)
                 ->update([
-                    'ref_link' => $settings->site_address.'/ref/'.$usf->username,
+                    'ref_link' => rtrim($settings->site_address, '/').'/ref/'.$usf->username,
                     'ref_bonus' => '0',
                     'bonus_released' => '0',
                 ]);

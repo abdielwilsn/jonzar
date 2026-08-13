@@ -620,7 +620,7 @@ class ManageUsersController extends Controller
 
         User::where('id', $thisid)
         ->update([
-            'ref_link' => $settings->site_address.'/ref/'.$user->username,
+            'ref_link' => rtrim($settings->site_address, '/').'/ref/'.$user->username,
         ]);
         return redirect()->back()->with('success', 'User Registered Sucessful!');
     }
