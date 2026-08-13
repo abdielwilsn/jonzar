@@ -108,6 +108,7 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                                             <td>{{ \Carbon\Carbon::parse($investment->start_date)->toDayDateTimeString() }}</td>
                                                             <td>{{ \Carbon\Carbon::parse($investment->end_date)->toDayDateTimeString() }}</td>
                                                             <td>
+                                                                @if (Auth('admin')->User()->type == "Super Admin")
                                                                 <form action="{{ route('admin.user-trades.delete', $investment->id) }}" method="POST" onsubmit="return confirm('Are you sure you want to delete this trade? This will refund {{ $settings->currency }}{{ number_format($investment->amount, 2) }} to the user\'s balance.');">
                                                                     @csrf
                                                                     @method('DELETE')
@@ -115,6 +116,9 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                                                         <i class="fa fa-trash"></i> Delete
                                                                     </button>
                                                                 </form>
+                                                                @else
+                                                                    <span class="text-{{ $text }} opacity-50">View only</span>
+                                                                @endif
                                                             </td>
                                                         </tr>
                                                     @endforeach

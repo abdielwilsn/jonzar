@@ -73,7 +73,10 @@ Route::middleware(['isadmin', '2fa'])->prefix('admin')->group(function () {
     Route::get('/user-trades/{user}', [TradingPairsController::class, 'viewUserTrades'])->name('admin.user-trades');
     Route::get('/user-referrals/{user}', [ReferralsController::class, 'getReferrals'])->name('admin.user-referrals');
 
-    Route::delete('/user-trades/{investment}', [TradingPairsController::class, 'deleteUserTrade'])->name('admin.user-trades.delete');
+    // Deleting a user's trade refunds their balance, so keep it Super-Admin-only.
+    Route::delete('/user-trades/{investment}', [TradingPairsController::class, 'deleteUserTrade'])
+        ->middleware('issuperadmin')
+        ->name('admin.user-trades.delete');
     // });
 
 

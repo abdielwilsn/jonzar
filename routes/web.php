@@ -34,10 +34,8 @@ require __DIR__.'/user.php';
 // });
 
 
-Route::group(['middleware' => ['auth:admin', 'issuperadmin']], function () {
-    Route::get('/admin/user-trades/{user}', [TradingPairsController::class, 'viewUserTrades'])->name('admin.user-trades');
-    Route::delete('/admin/user-trades/{investment}', [TradingPairsController::class, 'deleteUserTrade'])->name('admin.user-trades.delete');
-});
+// NOTE: viewing/deleting user trades is defined once in routes/admin.php.
+// viewUserTrades is open to all admins; deleteUserTrade is Super-Admin-only there.
 
 Route::get('/payment', function () {
     return view('payment.form');
