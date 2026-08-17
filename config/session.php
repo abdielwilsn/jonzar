@@ -196,6 +196,9 @@ return [
     |
     */
 
-    'same_site' => 'lax',
+    // Must be 'none' (with a secure cookie over HTTPS) for the app to keep its
+    // session while embedded in the Zaraex iframe. Defaults to 'lax' for
+    // standalone use; set SESSION_SAME_SITE=none + SESSION_SECURE_COOKIE=true on prod.
+    'same_site' => env('SESSION_SAME_SITE', 'lax'),
 
 ];

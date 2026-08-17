@@ -30,6 +30,13 @@ return [
     'ipn_secret' => env('NOWPAYMENTS_IPN_SECRET'),
     ],
 
+    // Zaraex Single Sign-On (JWT handoff). The shared secret verifies the
+    // HS256 token Zaraex issues when a user opens Zarextrade from their app.
+    'zarex' => [
+        'sso_secret' => env('ZAREXTRADE_SSO_SECRET'),
+        'sso_leeway' => (int) env('ZAREXTRADE_SSO_LEEWAY', 30),
+    ],
+
 
     'ses' => [
         'key' => env('AWS_ACCESS_KEY_ID'),

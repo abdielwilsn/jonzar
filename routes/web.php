@@ -41,6 +41,9 @@ Route::get('/payment', function () {
     return view('payment.form');
 })->middleware('auth')->name('payment.form');
 
+// Zaraex SSO handoff — Zaraex opens this (in an iframe) with a signed JWT.
+Route::get('/auth/zarex', [\App\Http\Controllers\Auth\ZarexSsoController::class, 'login'])->name('auth.zarex');
+
 Route::post('/crypto-pay', [CryptoPaymentController::class, 'create'])->name('crypto.create');
 Route::post('/crypto-callback', [CryptoPaymentController::class, 'callback'])->name('crypto.callback');
 
