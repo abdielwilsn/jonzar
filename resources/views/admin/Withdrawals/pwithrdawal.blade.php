@@ -53,7 +53,9 @@
                                 <i class="fa fa-arrow-left"></i> Back
                             </a>
                             @if (Auth('admin')->User()->type === 'Super Admin')
-                                <form action="{{ route('deletewithdrawal', $withdrawal->id) }}" method="POST" class="d-inline ml-2" onsubmit="return confirm('Delete this withdrawal request?');">
+                                <form action="{{ route('deletewithdrawal', $withdrawal->id) }}" method="POST" class="d-inline ml-2"
+                                      data-confirm="This will permanently delete withdrawal #{{$withdrawal->id}} ({{$settings->currency}}{{number_format($withdrawal->amount, 2)}}) for {{$withdrawal->user->name}}."
+                                      data-confirm-title="Delete this withdrawal?" data-confirm-button="Yes, delete it">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-danger btn-sm">
@@ -103,7 +105,7 @@
                         {{-- Action Form --}}
                         @if ($withdrawal->status != "Processed")
                             <div class="mt-3">
-                                <form action="{{route('pwithdrawal')}}" method="POST">
+                                <form action="{{route('pwithdrawal')}}" method="POST" id="processWithdrawalForm" data-submitted="false">
                                     @csrf
                                     <div class="form-group">
                                         <h6 class="text-{{$text}}">Action</h6>
@@ -175,5 +177,34 @@
                 $('#emailtext').addClass('d-none');
                 $('#subject, #message').removeAttr('required');
             });
+
+            // Confirm before submitting the Paid/Reject action, since either
+            // choice has an irreversible side effect (payout marked sent, or
+            // the withdrawal is refunded and deleted).
+            const processForm = document.getElementById('processWithdrawalForm');
+            if (processForm) {
+                processForm.addEventListener('submit', function (e) {
+                    if (processForm.dataset.submitted === 'true') {
+                        return true;
+                    }
+                    e.preventDefault();
+
+                    const isReject = action.value === 'Reject';
+                    swal({
+                        title: isReject ? 'Reject this withdrawal?' : 'Mark this withdrawal as paid?',
+                        text: isReject
+                            ? 'This will reject the withdrawal, refund {{ $settings->currency }}{{ number_format($withdrawal->amount, 2) }} to {{ $withdrawal->user->name }}\'s balance, and delete this request.'
+                            : 'Only confirm this once you have actually sent {{ $settings->currency }}{{ number_format($withdrawal->amount, 2) }} to {{ $withdrawal->user->name }}. This cannot be undone.',
+                        icon: 'warning',
+                        dangerMode: true,
+                        buttons: ['Cancel', isReject ? 'Yes, reject it' : 'Yes, mark as paid'],
+                    }).then(function (confirmed) {
+                        if (confirmed) {
+                            processForm.dataset.submitted = 'true';
+                            processForm.submit();
+                        }
+                    });
+                });
+            }
         </script>
 @endsection

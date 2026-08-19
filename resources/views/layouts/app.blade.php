@@ -729,6 +729,34 @@ $autoTheme = ! ($themeUser && in_array($dashboardStyle, ['light', 'dark'], true)
 			}
 		</style>
 
+		{{-- Global confirmation modal for admin CRUD actions (deposits/withdrawals accept, reject, delete, etc.).
+		     Add data-confirm="..." (and optionally data-confirm-title / data-confirm-button / data-confirm-danger="false")
+		     to any <form> to require an "are you sure?" modal before it submits. --}}
+		<script>
+			$(document).on('submit', 'form[data-confirm]', function (e) {
+				var form = this;
+				if (form.dataset.confirmed === 'true') {
+					return true;
+				}
+				e.preventDefault();
+
+				swal({
+					title: form.dataset.confirmTitle || 'Are you sure?',
+					text: form.dataset.confirm,
+					icon: 'warning',
+					dangerMode: form.dataset.confirmDanger !== 'false',
+					buttons: ['Cancel', form.dataset.confirmButton || 'Yes, continue'],
+				}).then(function (confirmed) {
+					if (confirmed) {
+						form.dataset.confirmed = 'true';
+						form.submit();
+					}
+				});
+
+				return false;
+			});
+		</script>
+
 		@stack('modals')
 		@stack('scripts')
 		@livewireScripts

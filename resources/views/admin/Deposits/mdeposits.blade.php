@@ -57,9 +57,19 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                                 <a href="{{route('viewdepositimage', $deposit->id)}}" class="btn btn-{{$text}} btn-sm m-1" title="View payment screenshot">
                                                     <i class="fa fa-eye"></i>
                                                 </a>
-                                                <a href="{{url('admin/dashboard/deldeposit')}}/{{$deposit->id}}" class="m-1 btn btn-danger btn-sm">Delete</a>
+                                                <form action="{{route('deldeposit', $deposit->id)}}" method="POST" class="d-inline"
+                                                      data-confirm="This will permanently delete deposit #{{$deposit->id}} ({{$settings->currency}}{{number_format($deposit->amount)}}) for {{$deposit->duser->name}}. This cannot be undone."
+                                                      data-confirm-title="Delete this deposit?" data-confirm-button="Yes, delete it">
+                                                    @csrf
+                                                    <button type="submit" class="m-1 btn btn-danger btn-sm">Delete</button>
+                                                </form>
                                                 @if($deposit->status != "Processed")
-                                                    <a class="btn btn-primary btn-sm" href="{{url('admin/dashboard/pdeposit')}}/{{$deposit->id}}">Process</a>
+                                                    <form action="{{route('pdeposit', $deposit->id)}}" method="POST" class="d-inline"
+                                                          data-confirm="This will approve deposit #{{$deposit->id}} of {{$settings->currency}}{{number_format($deposit->amount)}} for {{$deposit->duser->name}} and credit their balance."
+                                                          data-confirm-title="Approve this deposit?" data-confirm-button="Yes, approve it" data-confirm-danger="false">
+                                                        @csrf
+                                                        <button type="submit" class="btn btn-primary btn-sm">Process</button>
+                                                    </form>
                                                 @endif
                                             </td>
                                         </tr>
@@ -80,8 +90,18 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                                 <a href="{{route('viewdepositimage', $deposit->id)}}" class="btn btn-{{$text}} btn-sm m-1" title="View payment screenshot">
                                                     <i class="fa fa-eye"></i>
                                                 </a>
-                                                <a href="{{url('admin/dashboard/deldeposit')}}/{{$deposit->id}}" class="m-1 btn btn-danger btn-sm">Delete</a>
-                                                <a class="btn btn-primary btn-sm" href="{{url('admin/dashboard/pdeposit')}}/{{$deposit->id}}">Process</a>
+                                                <form action="{{route('deldeposit', $deposit->id)}}" method="POST" class="d-inline"
+                                                      data-confirm="This will permanently delete deposit #{{$deposit->id}} ({{$settings->currency}}{{number_format($deposit->amount)}}) for {{$deposit->duser->name}}. This cannot be undone."
+                                                      data-confirm-title="Delete this deposit?" data-confirm-button="Yes, delete it">
+                                                    @csrf
+                                                    <button type="submit" class="m-1 btn btn-danger btn-sm">Delete</button>
+                                                </form>
+                                                <form action="{{route('pdeposit', $deposit->id)}}" method="POST" class="d-inline"
+                                                      data-confirm="This will approve deposit #{{$deposit->id}} of {{$settings->currency}}{{number_format($deposit->amount)}} for {{$deposit->duser->name}} and credit their balance."
+                                                      data-confirm-title="Approve this deposit?" data-confirm-button="Yes, approve it" data-confirm-danger="false">
+                                                    @csrf
+                                                    <button type="submit" class="btn btn-primary btn-sm">Process</button>
+                                                </form>
                                             </td>
                                         </tr>
                                     @endforeach

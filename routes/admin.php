@@ -137,8 +137,8 @@ Route::middleware(['isadmin', '2fa'])->prefix('admin')->group(function () {
 
     Route::get('dashboard/switchuser/{id}', [ManageUsersController::class , 'switchuser']);
     Route::get('dashboard/clearacct/{id}', [ManageUsersController::class , 'clearacct'])->name('clearacct');
-    Route::get('dashboard/deldeposit/{id}', [ManageDepositController::class , 'deldeposit'])->name('deldeposit');
-    Route::get('dashboard/pdeposit/{id}', [ManageDepositController::class , 'pdeposit'])->name('pdeposit');
+    Route::post('dashboard/deldeposit/{id}', [ManageDepositController::class , 'deldeposit'])->name('deldeposit');
+    Route::post('dashboard/pdeposit/{id}', [ManageDepositController::class , 'pdeposit'])->name('pdeposit');
     Route::get('dashboard/viewimage/{id}', [ManageDepositController::class , 'viewdepositimage'])->name('viewdepositimage');
 
     // Approving/processing/deleting withdrawals is restricted to Super Admins.

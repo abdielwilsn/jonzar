@@ -68,7 +68,9 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                                     <i class="fa fa-eye"></i> Process
                                                 </a>
                                             @endif
-                                            <form action="{{ route('deletewithdrawal', $withdrawal->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Delete this withdrawal request?');">
+                                            <form action="{{ route('deletewithdrawal', $withdrawal->id) }}" method="POST" class="d-inline"
+                                                  data-confirm="This will permanently delete withdrawal #{{$withdrawal->id}} ({{$settings->currency}}{{number_format($withdrawal->amount, 2)}}) for {{$withdrawal->user->name}}."
+                                                  data-confirm-title="Delete this withdrawal?" data-confirm-button="Yes, delete it">
                                                 @csrf
                                                 @method('DELETE')
                                                 <button type="submit" class="m-1 btn btn-danger btn-sm">
