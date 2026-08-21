@@ -255,8 +255,8 @@ class ManageUsersController extends Controller
         $user = User::where('id', $id)->first();
         $deposits = Deposit::where('user', $id)->orderByDesc('id')->get();
         $withdrawals = Withdrawal::where('user_id', $id)->orderByDesc('id')->get();
-        $totalDeposits = $deposits->sum('amount');
-        $totalWithdrawals = $withdrawals->sum('amount');
+        $totalDeposits = $deposits->sum(fn ($deposit) => is_numeric($deposit->amount) ? (float) $deposit->amount : 0);
+        $totalWithdrawals = $withdrawals->sum(fn ($withdrawal) => is_numeric($withdrawal->amount) ? (float) $withdrawal->amount : 0);
 
         // Fetch the referrer (if any)
         $referrer = $user->ref_by ? User::where('id', $user->ref_by)->first() : null;
