@@ -83,6 +83,15 @@ if (Auth::user()->dashboard_style == "light") {
                                 @endforeach
                             </div>
 
+                            <div id="zarexCoinPicker" class="dep-zarex-coin" style="display:none">
+                                <label class="dep-label">Pay from Zarex balance</label>
+                                <input type="hidden" name="coin" id="zarexCoin">
+                                <div class="dep-coin-options">
+                                    <button type="button" class="coin-option-btn" data-coin="USDT">USDT</button>
+                                    <button type="button" class="coin-option-btn" data-coin="USDC">USDC</button>
+                                </div>
+                            </div>
+
                             <button type="submit" class="dep-submit" id="submitBtn">
                                 <span>Proceed to payment</span>
                                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
@@ -207,6 +216,14 @@ if (Auth::user()->dashboard_style == "light") {
     .pm-check svg{width:11px;height:11px}
     .payment-method-card.selected .pm-check{opacity:1;transform:scale(1)}
 
+    /* Zarex coin picker */
+    .dep-zarex-coin{margin-top:16px}
+    .dep-coin-options{display:flex;gap:10px}
+    .coin-option-btn{flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--elev);
+        color:var(--text);font-weight:600;font-size:.9rem;cursor:pointer;transition:.2s}
+    .coin-option-btn:hover{border-color:var(--blue-soft)}
+    .coin-option-btn.selected{border-color:var(--blue);background:rgba(37,99,235,.08)}
+
     /* Submit */
     .dep-submit{width:100%;margin-top:18px;display:flex;align-items:center;justify-content:center;gap:8px;
         padding:15px;border-radius:13px;border:none;cursor:pointer;background:var(--blue);color:#fff;font-weight:600;font-size:1rem;transition:.2s}
@@ -253,6 +270,17 @@ if (Auth::user()->dashboard_style == "light") {
         let paymethod = document.querySelector('#paymethod');
         const amountInput = document.getElementById('amount');
         const quickAmountBtns = document.querySelectorAll('.quick-amount-btn');
+        const zarexCoinPicker = document.getElementById('zarexCoinPicker');
+        const zarexCoin = document.getElementById('zarexCoin');
+        const coinOptionBtns = document.querySelectorAll('.coin-option-btn');
+
+        coinOptionBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                coinOptionBtns.forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+                zarexCoin.value = this.dataset.coin;
+            });
+        });
 
         // Quick amount buttons
         quickAmountBtns.forEach(btn => {
@@ -279,6 +307,14 @@ if (Auth::user()->dashboard_style == "light") {
 
             const methodId = element.dataset.id;
             const methodName = element.dataset.method;
+
+            if (methodName === 'Zarex') {
+                zarexCoinPicker.style.display = '';
+            } else {
+                zarexCoinPicker.style.display = 'none';
+                zarexCoin.value = '';
+                coinOptionBtns.forEach(b => b.classList.remove('selected'));
+            }
 
             let url = "{{ url('/dashboard/get-method/') }}" + '/' + methodId;
             fetch(url)
@@ -320,6 +356,21 @@ if (Auth::user()->dashboard_style == "light") {
                     icon: 'fa fa-exclamation-circle',
                     title: 'Select Payment Method',
                     message: 'Please select a payment method to continue',
+                }, {
+                    type: 'danger',
+                    placement: { from: "top", align: "right" },
+                    delay: 4000,
+                    animate: {
+                        enter: 'animated fadeInDown',
+                        exit: 'animated fadeOutUp'
+                    },
+                });
+            } else if (paymethod.value === 'Zarex' && !zarexCoin.value) {
+                e.preventDefault();
+                $.notify({
+                    icon: 'fa fa-exclamation-circle',
+                    title: 'Select a Coin',
+                    message: 'Please choose USDT or USDC to deposit via Zarex',
                 }, {
                     type: 'danger',
                     placement: { from: "top", align: "right" },

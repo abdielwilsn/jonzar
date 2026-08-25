@@ -35,6 +35,12 @@ return [
     'zarex' => [
         'sso_secret' => env('ZAREXTRADE_SSO_SECRET'),
         'sso_leeway' => (int) env('ZAREXTRADE_SSO_LEEWAY', 30),
+
+        // Zaraex wallet API (server-to-server). We debit the user's Zaraex
+        // crypto balance to fund their Zarextrade account. Bearer-token
+        // authenticated with a key shared out-of-band by the Zaraex team.
+        'api_base_url' => env('ZAREXTRADE_API_BASE_URL'),
+        'api_key' => env('ZAREXTRADE_API_KEY'),
     ],
 
 

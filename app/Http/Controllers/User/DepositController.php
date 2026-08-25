@@ -4,6 +4,9 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 
 use App\Models\User;
 use App\Models\Settings;
@@ -44,6 +47,10 @@ class DepositController extends Controller
 
         $settings = Settings::where('id', '1')->first();
         $methodname =  Wdmethod::where('name', $request->payment_method)->first();
+
+        if ($methodname->name == "Zarex") {
+            return $this->redirectToZarex($request);
+        }
 
         if ($methodname->name == "Stripe") {
             $secretkey = $settings->s_s_k;
@@ -281,6 +288,129 @@ class DepositController extends Controller
 
         return redirect()->route('deposits')
         ->with('success', 'Account Fund Sucessful! Please wait for system to validate this transaction.');
+    }
+
+    /**
+     * Fund the Zarextrade account by debiting the user's Zaraex wallet
+     * balance server-to-server (POST /wallet/debit on the Zaraex API).
+     * Only USDT/USDC are offered since they're ~1:1 with USD, so no
+     * exchange-rate lookup is needed to know how much to credit.
+     */
+    private function redirectToZarex(Request $request)
+    {
+        $coin = strtoupper((string) $request->input('coin'));
+
+        if (!in_array($coin, ['USDT', 'USDC'], true)) {
+            return redirect()->route('deposits')->with('message', 'Please select USDT or USDC to deposit via Zarex.');
+        }
+
+        $amount = (float) $request->amount;
+        $user = Auth::user();
+
+        if (empty($user->zarex_user_id)) {
+            return redirect()->route('deposits')->with('message', 'Your account is not linked to Zarex.');
+        }
+
+        $baseUrl = config('services.zarex.api_base_url');
+        $apiKey = config('services.zarex.api_key');
+
+        if (empty($baseUrl) || empty($apiKey)) {
+            Log::error('Zarex wallet integration is not configured (ZAREXTRADE_API_BASE_URL / ZAREXTRADE_API_KEY).');
+            return redirect()->route('deposits')->with('message', 'Zarex deposits are temporarily unavailable.');
+        }
+
+        $http = Http::baseUrl($baseUrl)->withToken($apiKey)->timeout(15);
+
+        $balanceResponse = $http->get('/wallet/balance', [
+            'user_id' => $user->zarex_user_id,
+            'currency' => $coin,
+        ]);
+
+        if (!$balanceResponse->successful()) {
+            Log::warning('Zarex wallet/balance check failed: ' . $balanceResponse->body());
+            return redirect()->route('deposits')->with('message', 'Could not reach Zarex to check your balance. Please try again.');
+        }
+
+        if ((float) $balanceResponse->json('available', 0) < $amount) {
+            return redirect()->route('deposits')->with('message', "Insufficient $coin balance on Zarex for this deposit.");
+        }
+
+        $reference = (string) Str::uuid();
+
+        $debitResponse = $http->post('/wallet/debit', [
+            'user_id' => $user->zarex_user_id,
+            'amount' => $amount,
+            'currency' => $coin,
+            'reference' => $reference,
+            'idempotency_key' => $reference,
+        ]);
+
+        if ($debitResponse->status() === 400) {
+            return redirect()->route('deposits')->with('message', $debitResponse->json('error', 'Zarex declined this deposit.'));
+        }
+
+        if (!$debitResponse->successful()) {
+            Log::error('Zarex wallet/debit failed: ' . $debitResponse->body());
+            return redirect()->route('deposits')->with('message', 'Zarex deposit failed. Please try again.');
+        }
+
+        $txnId = 'zarex_' . $debitResponse->json('transaction_id', $reference);
+
+        // Idempotency: guard against a duplicate submit resulting in a second credit.
+        if (Deposit::where('txn_id', $txnId)->exists()) {
+            return redirect()->route('deposits')->with('success', 'Payment already processed.');
+        }
+
+        $dp = new Deposit();
+        $dp->amount = $amount;
+        $dp->txn_id = $txnId;
+        $dp->payment_mode = 'Zarex';
+        $dp->status = 'Processed';
+        $dp->proof = $coin;
+        $dp->plan = 0;
+        $dp->user = $user->id;
+        $dp->save();
+
+        User::where('id', $user->id)
+            ->update([
+                'account_bal' => $user->account_bal + $amount,
+            ]);
+
+        $settings = Settings::where('id', '=', '1')->first();
+        $earnings = $settings->referral_commission * $amount / 100;
+
+        if (!empty($user->ref_by)) {
+            Agent::where('agent', $user->ref_by)->increment('total_activated', 1);
+            Agent::where('agent', $user->ref_by)->increment('earnings', $earnings);
+
+            $agent = User::where('id', $user->ref_by)->first();
+            User::where('id', $user->ref_by)
+                ->update([
+                    'account_bal' => $agent->account_bal + $earnings,
+                    'ref_bonus' => $agent->ref_bonus + $earnings,
+                ]);
+
+            $array = User::all();
+            $this->getAncestors($array, $amount, $user->id, 0, $user->id);
+
+            Tp_Transaction::create([
+                'user' => $user->ref_by,
+                'from_user' => $user->id,
+                'plan' => 'Credit',
+                'amount' => $earnings,
+                'type' => 'Ref_bonus',
+            ]);
+        }
+
+        $objDemo = new \stdClass();
+        $objDemo->message = "This is to inform you that you have successfully deposited $settings->currency$amount.";
+        $objDemo->sender = $settings->site_name;
+        $objDemo->date = \Carbon\Carbon::Now();
+        $objDemo->subject = "Successful Deposit";
+
+        Mail::bcc($user->email)->send(new NewNotification($objDemo));
+
+        return redirect()->route('deposits')->with('success', 'Payment Completed');
     }
 
     // for front end content management
