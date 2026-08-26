@@ -381,6 +381,12 @@
         font-size: 18px;
     }
 
+    .social-buttons {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+
     /* Sign Up Link */
     .signup-link {
         display: flex;
@@ -525,16 +531,27 @@
             </button>
         </form>
 
-        <!-- Social Login (if enabled) -->
-        @if($settings->enable_social_login == "yes")
+        <!-- Social Login (if enabled) / Zaraex SSO (if configured) -->
+        @if($settings->enable_social_login == "yes" || config('services.zarex.authorize_url'))
             <div class="divider">
                 <span>Or continue with</span>
             </div>
 
-            <a href="{{route('social.redirect', ['social' => 'google'])}}" class="btn-social">
-                <i class="fab fa-google" style="color: #DB4437;"></i>
-                Continue with Google
-            </a>
+            <div class="social-buttons">
+                @if($settings->enable_social_login == "yes")
+                    <a href="{{route('social.redirect', ['social' => 'google'])}}" class="btn-social">
+                        <i class="fab fa-google" style="color: #DB4437;"></i>
+                        Continue with Google
+                    </a>
+                @endif
+
+                @if(config('services.zarex.authorize_url'))
+                    <a href="{{ config('services.zarex.authorize_url') }}" class="btn-social">
+                        <i class="fa fa-exchange-alt" style="color: var(--primary);"></i>
+                        Continue with Zaraex
+                    </a>
+                @endif
+            </div>
         @endif
 
         <!-- Sign Up Link -->

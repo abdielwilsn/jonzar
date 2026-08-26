@@ -30,17 +30,23 @@ return [
     'ipn_secret' => env('NOWPAYMENTS_IPN_SECRET'),
     ],
 
-    // Zaraex Single Sign-On (JWT handoff). The shared secret verifies the
-    // HS256 token Zaraex issues when a user opens Zarextrade from their app.
+    // Zaraex Single Sign-On (one-time code handoff, exchanged server-to-server
+    // for the user's profile via the wallet API key below — see
+    // ZarexSsoController). ZAREXTRADE_SSO_SECRET/LEEWAY are no longer used;
+    // this used to verify a JWT passed directly in the URL, which review
+    // flagged as exposing the login credential via browser history/logs.
     'zarex' => [
-        'sso_secret' => env('ZAREXTRADE_SSO_SECRET'),
-        'sso_leeway' => (int) env('ZAREXTRADE_SSO_LEEWAY', 30),
-
         // Zaraex wallet API (server-to-server). We debit the user's Zaraex
         // crypto balance to fund their Zarextrade account. Bearer-token
         // authenticated with a key shared out-of-band by the Zaraex team.
         'api_base_url' => env('ZAREXTRADE_API_BASE_URL'),
         'api_key' => env('ZAREXTRADE_API_KEY'),
+
+        // Zaraex-hosted page that mints an SSO token for a visitor who is
+        // already logged into Zaraex (or sends them to log in first) and
+        // redirects back to /auth/zarex. Powers "Continue with Zaraex" on
+        // our own login page. URL unconfirmed with the Zaraex team.
+        'authorize_url' => env('ZAREXTRADE_AUTHORIZE_URL'),
     ],
 
 

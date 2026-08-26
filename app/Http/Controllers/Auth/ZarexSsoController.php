@@ -4,63 +4,67 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use Firebase\JWT\ExpiredException;
-use Firebase\JWT\JWT;
-use Firebase\JWT\Key;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 /**
  * Single Sign-On handoff from Zaraex.
  *
- * Zaraex loads https://zarextrade.com/auth/zarex?token=<jwt> inside an iframe.
- * The JWT is signed HS256 with a shared secret. We verify it, then find (or
- * create) the matching Zarextrade user and start their session.
+ * Zaraex loads https://zarextrade.com/auth/zarex?code=<code> (iframe embed,
+ * or a top-level redirect from their "Continue with Zaraex" flow). The code
+ * is a short-lived, single-use opaque value — never the user's actual login
+ * credential — so we exchange it server-to-server for the user's profile via
+ * POST /zarextrade/exchange-code, authenticated with our shared API key.
+ * (Previously this verified a signed JWT passed directly in the URL, but
+ * that exposed the login credential itself via browser history/access logs;
+ * the code+exchange indirection avoids that.)
  */
 class ZarexSsoController extends Controller
 {
     public function login(Request $request)
     {
-        $token = (string) $request->query('token', '');
+        $code = (string) $request->query('code', '');
 
-        if ($token === '') {
-            abort(400, 'Missing SSO token.');
+        if ($code === '') {
+            abort(400, 'Missing SSO code.');
         }
 
-        $secret = config('services.zarex.sso_secret');
+        $baseUrl = config('services.zarex.api_base_url');
+        $apiKey = config('services.zarex.api_key');
 
-        if (empty($secret)) {
-            Log::error('Zaraex SSO secret is not configured (ZAREXTRADE_SSO_SECRET).');
+        if (empty($baseUrl) || empty($apiKey)) {
+            Log::error('Zaraex SSO exchange is not configured (ZAREXTRADE_API_BASE_URL / ZAREXTRADE_API_KEY).');
             abort(500, 'Sign-in is temporarily unavailable.');
         }
 
-        // Tolerate a little clock drift between the two servers.
-        JWT::$leeway = (int) config('services.zarex.sso_leeway', 30);
+        $response = Http::baseUrl($baseUrl)->withToken($apiKey)->timeout(10)
+            ->post('/zarextrade/exchange-code', ['code' => $code]);
 
-        try {
-            $claims = JWT::decode($token, new Key($secret, 'HS256'));
-        } catch (ExpiredException $e) {
+        if ($response->status() === 401) {
             abort(401, 'Your sign-in link has expired. Please reopen Zarextrade from Zaraex.');
-        } catch (\Throwable $e) {
-            Log::warning('Zaraex SSO token rejected: ' . $e->getMessage());
+        }
+
+        if (!$response->successful()) {
+            Log::warning('Zaraex SSO code exchange failed: ' . $response->body());
             abort(401, 'Invalid sign-in link.');
         }
 
-        $zarexId = isset($claims->sub) ? (string) $claims->sub : '';
-        $email   = isset($claims->email) ? trim((string) $claims->email) : '';
+        $zarexId = (string) $response->json('sub', '');
+        $email   = trim((string) $response->json('email', ''));
 
         if ($zarexId === '' || $email === '') {
-            abort(422, 'Sign-in token is missing required fields.');
+            abort(422, 'Sign-in response is missing required fields.');
         }
 
         $user = $this->findOrCreateUser(
             $zarexId,
             $email,
-            isset($claims->name) ? (string) $claims->name : null,
-            isset($claims->kyc_status) ? (string) $claims->kyc_status : null
+            $response->json('name') !== null ? (string) $response->json('name') : null,
+            $response->json('kyc_status') !== null ? (string) $response->json('kyc_status') : null
         );
 
         // Persistent login so the session survives inside the iframe.
