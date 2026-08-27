@@ -27,6 +27,8 @@ use Illuminate\Support\Facades\Auth;
 use App\Mail\NewNotification;
 use App\Mail\UserUpload;
 use App\Mail\KycUpload;
+use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use App\Http\Traits\CPTrait;
@@ -116,6 +118,138 @@ class WithdrawalController extends Controller
         Mail::bcc($mail)->send(new NewNotification($objDemo));
 
         return redirect()->back()->with('success', 'Withdrawal request submitted successfully!');
+    }
+
+    /**
+     * Withdraw straight to the user's own Zaraex deposit address as a real
+     * on-chain crypto send (via the same CoinPayments withdrawal mechanism
+     * already used for Bitcoin/Litecoin/Ethereum), instead of just calling
+     * Zaraex's ledger-only /wallet/credit. Zaraex's own Quidax deposit
+     * webhook picks up the incoming transaction like any other deposit.
+     */
+    public function withdrawToZarex(Request $request)
+    {
+        $request->validate([
+            'amount' => 'required|numeric|min:1',
+            'gross_amount' => 'required|numeric|min:1',
+            'coin' => 'required|string',
+            'network' => 'required|string',
+        ]);
+
+        $coin = strtoupper($request->coin);
+        $network = strtolower($request->network);
+
+        // Must match what Zaraex actually supports per coin (see SUPPORTED_COINS
+        // in their zarextrade.ts) — USDC is erc20-only there.
+        $validNetworks = [
+            'USDT' => ['erc20', 'trc20', 'bep20'],
+            'USDC' => ['erc20'],
+        ];
+
+        if (!isset($validNetworks[$coin]) || !in_array($network, $validNetworks[$coin], true)) {
+            return redirect()->back()->with('message', 'Please select a supported coin and network to withdraw to Zarex.');
+        }
+
+        $user = Auth::user();
+
+        if (empty($user->zarex_user_id)) {
+            return redirect()->back()->with('message', 'Your account is not linked to Zarex.');
+        }
+
+        $settings = Settings::where('id', '1')->firstOrFail();
+
+        if ($settings->enable_kyc == "yes" && $user->account_verify != "Verified") {
+            return redirect()->back()->with('message', 'Your account must be verified before you can make withdrawal.');
+        }
+
+        if ($this->userHasPendingWithdrawal($user->id)) {
+            return redirect()->back()->with('message', 'You already have a pending withdrawal request.');
+        }
+
+        $grossAmount = round((float) $request->gross_amount, 2);
+        $feePercentage = (float) ($settings->withdrawal_percentage ?? 0);
+        $serviceFee = round(($grossAmount * $feePercentage) / 100, 2);
+        $netAmount = round($grossAmount - $serviceFee, 2);
+
+        if ($netAmount <= 0) {
+            return redirect()->back()->with('message', 'The withdrawal amount after fees must be greater than zero.');
+        }
+
+        if ($user->account_bal < $grossAmount) {
+            return redirect()->back()->with('message', 'Insufficient balance to withdraw this amount.');
+        }
+
+        $cpCurrency = $this->coinPaymentsCurrencyFor($coin, $network);
+
+        if (!$cpCurrency) {
+            Log::error("No CoinPayments currency mapping for Zarex withdrawal: $coin/$network.");
+            return redirect()->back()->with('message', 'This coin/network is not currently supported for Zarex withdrawals.');
+        }
+
+        $baseUrl = config('services.zarex.api_base_url');
+        $apiKey = config('services.zarex.api_key');
+
+        if (empty($baseUrl) || empty($apiKey)) {
+            Log::error('Zarex wallet integration is not configured (ZAREXTRADE_API_BASE_URL / ZAREXTRADE_API_KEY).');
+            return redirect()->back()->with('message', 'Zarex withdrawals are temporarily unavailable.');
+        }
+
+        $addressResponse = Http::baseUrl($baseUrl)->withToken($apiKey)->timeout(15)->get('/zarextrade/wallet-address', [
+            'user_id' => $user->zarex_user_id,
+            'currency' => $coin,
+            'network' => $network,
+        ]);
+
+        if ($addressResponse->status() === 425) {
+            return redirect()->back()->with('message', 'Your Zarex deposit address is still being generated. Please try again in a few seconds.');
+        }
+
+        $wallet = $addressResponse->json('address');
+
+        if (!$addressResponse->successful() || empty($wallet)) {
+            Log::error('Zarex wallet-address lookup failed: ' . $addressResponse->body());
+            return redirect()->back()->with('message', 'Could not resolve your Zarex deposit address. Please try again.');
+        }
+
+        // Atomic conditional decrement: the earlier balance check above is only
+        // an early-exit for UX. This is the real guard — the WHERE clause and
+        // the decrement happen as a single row-level-locked SQL statement, so
+        // two concurrent requests can't both read the same balance and both
+        // debit it (a lost-update that would otherwise let a user trigger two
+        // real on-chain withdrawals off a single balance).
+        $debited = User::where('id', $user->id)
+            ->where('account_bal', '>=', $grossAmount)
+            ->decrement('account_bal', $grossAmount);
+
+        if (!$debited) {
+            return redirect()->back()->with('message', 'Insufficient balance to withdraw this amount.');
+        }
+
+        return $this->cpwithdraw($netAmount, $cpCurrency, $wallet, $user->id, $grossAmount);
+    }
+
+    /**
+     * Map a Zaraex coin+network combination to the CoinPayments currency
+     * ticker used for CreateWithdrawal.
+     *
+     * IMPORTANT: verify these codes against the actual CoinPayments merchant
+     * account's supported currency list before relying on this for real
+     * withdrawals — sending on the wrong network is unrecoverable fund loss.
+     */
+    private function coinPaymentsCurrencyFor(string $coin, string $network): ?string
+    {
+        $map = [
+            'USDT' => [
+                'erc20' => 'USDT.ERC20',
+                'trc20' => 'USDT.TRC20',
+                'bep20' => 'USDT.BEP20',
+            ],
+            'USDC' => [
+                'erc20' => 'USDC.ERC20',
+            ],
+        ];
+
+        return $map[$coin][$network] ?? null;
     }
 
     public function cancelwithdrawal($id)
@@ -329,13 +463,5 @@ class WithdrawalController extends Controller
         // Return the random generated string
         return $generated_string;
     }
-
-
-
-
-
-
-
-
 
 }

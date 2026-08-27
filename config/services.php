@@ -36,9 +36,10 @@ return [
     // this used to verify a JWT passed directly in the URL, which review
     // flagged as exposing the login credential via browser history/logs.
     'zarex' => [
-        // Zaraex wallet API (server-to-server). We debit the user's Zaraex
-        // crypto balance to fund their Zarextrade account. Bearer-token
-        // authenticated with a key shared out-of-band by the Zaraex team.
+        // Zaraex wallet API (server-to-server), Bearer-token authenticated
+        // with a key shared out-of-band by the Zaraex team. Used for the SSO
+        // code exchange and for resolving a user's Zaraex deposit address so
+        // withdrawals can be sent there as a real on-chain crypto transfer.
         'api_base_url' => env('ZAREXTRADE_API_BASE_URL'),
         'api_key' => env('ZAREXTRADE_API_KEY'),
 

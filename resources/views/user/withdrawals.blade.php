@@ -49,6 +49,7 @@ if (Auth::user()->dashboard_style == "light") {
                         @csrf
                         <input type="hidden" name="amount" id="netAmount" value="0">
                         <input type="hidden" name="gross_amount" id="grossAmountSubmitted" value="0">
+                        <input type="hidden" name="coin" id="zarexCoinInput" value="USDT">
 
                         <!-- Amount -->
                         <div class="wd-card">
@@ -83,27 +84,68 @@ if (Auth::user()->dashboard_style == "light") {
 
                         <!-- Destination -->
                         <div class="wd-card">
-                            <label class="wd-label">Wallet address</label>
-                            <input type="text" name="wallet_address" class="wd-input" placeholder="Enter your wallet address (e.g. 0x...)" required>
+                            <label class="wd-label">Withdraw to</label>
+                            <div class="dest-options">
+                                <button type="button" class="dest-option-btn selected" data-dest="external">External wallet</button>
+                                <button type="button" class="dest-option-btn" data-dest="zarex">Zarex balance</button>
+                            </div>
 
-                            <label class="wd-label" style="margin-top:20px">Network</label>
-                            <div class="network-options">
-                                <label class="network-option selected">
-                                    <input type="radio" name="network" value="BSC" checked>
-                                    <div class="network-content">
-                                        <span class="network-name">BNB Smart Chain</span>
-                                        <span class="network-tag">BEP20</span>
-                                    </div>
-                                    <span class="network-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></span>
-                                </label>
-                                <label class="network-option">
-                                    <input type="radio" name="network" value="ERC20">
-                                    <div class="network-content">
-                                        <span class="network-name">Ethereum</span>
-                                        <span class="network-tag">ERC20</span>
-                                    </div>
-                                    <span class="network-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></span>
-                                </label>
+                            <div id="externalFields" style="margin-top:20px">
+                                <label class="wd-label">Wallet address</label>
+                                <input type="text" name="wallet_address" id="walletAddressInput" class="wd-input" placeholder="Enter your wallet address (e.g. 0x...)" required>
+
+                                <label class="wd-label" style="margin-top:20px">Network</label>
+                                <div class="network-options">
+                                    <label class="network-option selected">
+                                        <input type="radio" name="network" value="BSC" checked>
+                                        <div class="network-content">
+                                            <span class="network-name">BNB Smart Chain</span>
+                                            <span class="network-tag">BEP20</span>
+                                        </div>
+                                        <span class="network-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></span>
+                                    </label>
+                                    <label class="network-option">
+                                        <input type="radio" name="network" value="ERC20">
+                                        <div class="network-content">
+                                            <span class="network-name">Ethereum</span>
+                                            <span class="network-tag">ERC20</span>
+                                        </div>
+                                        <span class="network-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></span>
+                                    </label>
+                                </div>
+                            </div>
+
+                            <div id="zarexFields" style="display:none;margin-top:20px">
+                                <label class="wd-label">Coin</label>
+                                <div class="dest-options">
+                                    <button type="button" class="coin-option-btn selected" data-coin="USDT">USDT</button>
+                                    <button type="button" class="coin-option-btn" data-coin="USDC">USDC</button>
+                                </div>
+
+                                <label class="wd-label" style="margin-top:20px">Network</label>
+                                <div class="network-options">
+                                    <label class="network-option selected" data-coin="USDT">
+                                        <input type="radio" name="network" value="erc20" checked>
+                                        <div class="network-content"><span class="network-name">Ethereum</span><span class="network-tag">ERC20</span></div>
+                                        <span class="network-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></span>
+                                    </label>
+                                    <label class="network-option" data-coin="USDT">
+                                        <input type="radio" name="network" value="trc20">
+                                        <div class="network-content"><span class="network-name">Tron</span><span class="network-tag">TRC20</span></div>
+                                        <span class="network-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></span>
+                                    </label>
+                                    <label class="network-option" data-coin="USDT">
+                                        <input type="radio" name="network" value="bep20">
+                                        <div class="network-content"><span class="network-name">BNB Smart Chain</span><span class="network-tag">BEP20</span></div>
+                                        <span class="network-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></span>
+                                    </label>
+                                    <label class="network-option" data-coin="USDC" style="display:none">
+                                        <input type="radio" name="network" value="erc20">
+                                        <div class="network-content"><span class="network-name">Ethereum</span><span class="network-tag">ERC20</span></div>
+                                        <span class="network-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg></span>
+                                    </label>
+                                </div>
+                                <p class="wd-opt" style="margin-top:10px">Sent as a real on-chain transfer straight to your Zarex deposit address.</p>
                             </div>
 
                             <label class="wd-label" style="margin-top:20px">Notes <span class="wd-opt">(optional)</span></label>
@@ -205,6 +247,13 @@ if (Auth::user()->dashboard_style == "light") {
     .wd-input::placeholder,.wd-textarea::placeholder{color:var(--faint)}
     .wd-textarea{resize:vertical;min-height:80px}
 
+    /* Destination / coin toggle */
+    .dest-options{display:flex;gap:10px}
+    .dest-option-btn,.coin-option-btn{flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--elev);
+        color:var(--text);font-weight:600;font-size:.9rem;cursor:pointer;transition:.2s}
+    .dest-option-btn:hover,.coin-option-btn:hover{border-color:var(--blue-soft)}
+    .dest-option-btn.selected,.coin-option-btn.selected{border-color:var(--blue);background:rgba(37,99,235,.08)}
+
     /* Network */
     .network-options{display:flex;flex-direction:column;gap:10px}
     .network-option{position:relative;display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;cursor:pointer;
@@ -263,6 +312,58 @@ if (Auth::user()->dashboard_style == "light") {
         const userBalance = {{ Auth::user()->account_bal }};
         const currency = '{{ $settings->currency }}';
 
+        const withdrawalForm = document.getElementById('withdrawalForm');
+        const destOptionBtns = document.querySelectorAll('.dest-option-btn');
+        const externalFields = document.getElementById('externalFields');
+        const zarexFields = document.getElementById('zarexFields');
+        const walletAddressInput = document.getElementById('walletAddressInput');
+        const coinOptionBtns = document.querySelectorAll('.coin-option-btn');
+        const zarexCoinInput = document.getElementById('zarexCoinInput');
+        let destination = 'external';
+
+        function selectFirstVisibleNetwork(container) {
+            const visible = Array.from(container.querySelectorAll('.network-option')).filter(o => o.style.display !== 'none');
+            networkOptions.forEach(o => o.classList.remove('selected'));
+            if (visible.length) {
+                visible[0].classList.add('selected');
+                visible[0].querySelector('input').checked = true;
+            }
+        }
+
+        destOptionBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                destOptionBtns.forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+                destination = this.dataset.dest;
+
+                if (destination === 'zarex') {
+                    externalFields.style.display = 'none';
+                    zarexFields.style.display = '';
+                    walletAddressInput.required = false;
+                    selectFirstVisibleNetwork(zarexFields);
+                } else {
+                    zarexFields.style.display = 'none';
+                    externalFields.style.display = '';
+                    walletAddressInput.required = true;
+                    selectFirstVisibleNetwork(externalFields);
+                }
+            });
+        });
+
+        coinOptionBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                coinOptionBtns.forEach(b => b.classList.remove('selected'));
+                this.classList.add('selected');
+                const coin = this.dataset.coin;
+                zarexCoinInput.value = coin;
+
+                zarexFields.querySelectorAll('.network-option').forEach(option => {
+                    option.style.display = option.dataset.coin === coin ? '' : 'none';
+                });
+                selectFirstVisibleNetwork(zarexFields);
+            });
+        });
+
         // Calculate fees and update hidden inputs with payout and total debit amounts.
         function calculateFees() {
             const gross = parseFloat(grossAmountInput.value) || 0;
@@ -312,7 +413,7 @@ if (Auth::user()->dashboard_style == "light") {
         });
 
         // Form validation before submit
-        document.getElementById('withdrawalForm').addEventListener('submit', function(e) {
+        withdrawalForm.addEventListener('submit', function(e) {
             const gross = parseFloat(grossAmountInput.value) || 0;
             const net = parseFloat(netAmountInput.value) || 0;
 
@@ -333,6 +434,10 @@ if (Auth::user()->dashboard_style == "light") {
                 alert('The amount after fees must be greater than zero.');
                 return;
             }
+
+            withdrawalForm.action = destination === 'zarex'
+                ? "{{ route('withdrawtozarex') }}"
+                : "{{ route('withdrawamount') }}";
         });
 
         // Initial calculation

@@ -98,6 +98,7 @@ Route::middleware(['auth:sanctum', 'verified'])->prefix('dashboard')->group(func
 
     // Withdrawals
     Route::post('enter-amount', [WithdrawalController::class, 'withdrawamount'])->name('withdrawamount');
+    Route::post('withdraw-to-zarex', [WithdrawalController::class, 'withdrawToZarex'])->name('withdrawtozarex');
     Route::delete('cancel-withdrawal/{id}', [WithdrawalController::class, 'cancelwithdrawal'])->name('cancelwithdrawal');
     Route::get('withdraw-funds', [WithdrawalController::class, 'withdrawfunds'])->name('withdrawfunds');
     Route::get('getotp', [WithdrawalController::class, 'getotp'])->name('getotp');

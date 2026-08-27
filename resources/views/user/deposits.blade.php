@@ -61,54 +61,39 @@ if (Auth::user()->dashboard_style == "light") {
                         </div>
 
                         <label class="dep-label" style="margin-top:22px">Payment method</label>
-                        <div class="dep-methods">
-                            @foreach ($dmethods as $method)
-                                <div class="payment-method-card"
-                                     data-method="{{ $method->name }}"
-                                     data-id="{{ $method->id }}"
-                                     onclick="selectPaymentMethod(this)">
-                                    <span class="pm-icon">
-                                        @if (!empty($method->img_url))
-                                            <img src="{{ $method->img_url }}" alt="{{ $method->name }}">
-                                        @else
-                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M16 12h2M3 10h18"/></svg>
-                                        @endif
-                                    </span>
-                                    <span class="pm-name">{{ $method->name }}</span>
-                                    <span class="pm-check">
-                                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg>
-                                    </span>
-                                </div>
-                            @endforeach
-
-                            {{-- Always available — not admin-configured, doesn't depend on a Wdmethod row. --}}
-                            <div class="payment-method-card"
-                                 data-method="Zarex"
-                                 data-id="zarex"
-                                 onclick="selectPaymentMethod(this)">
-                                <span class="pm-icon">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M16 12h2M3 10h18"/></svg>
-                                </span>
-                                <span class="pm-name">Zarex</span>
-                                <span class="pm-check">
-                                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg>
-                                </span>
+                        @if(count($dmethods) > 0)
+                            <div class="dep-methods">
+                                @foreach ($dmethods as $index => $method)
+                                    <div class="payment-method-card {{ $index === 0 ? 'selected' : '' }}"
+                                         data-method="{{ $method->name }}"
+                                         data-id="{{ $method->id }}"
+                                         onclick="selectPaymentMethod(this)">
+                                        <span class="pm-icon">
+                                            @if (!empty($method->img_url))
+                                                <img src="{{ $method->img_url }}" alt="{{ $method->name }}">
+                                            @else
+                                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M16 12h2M3 10h18"/></svg>
+                                            @endif
+                                        </span>
+                                        <span class="pm-name">{{ $method->name }}</span>
+                                        <span class="pm-check">
+                                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12l5 5 9-11"/></svg>
+                                        </span>
+                                    </div>
+                                @endforeach
                             </div>
-                        </div>
 
-                        <div id="zarexCoinPicker" class="dep-zarex-coin" style="display:none">
-                            <label class="dep-label">Pay from Zarex balance</label>
-                            <input type="hidden" name="coin" id="zarexCoin">
-                            <div class="dep-coin-options">
-                                <button type="button" class="coin-option-btn" data-coin="USDT">USDT</button>
-                                <button type="button" class="coin-option-btn" data-coin="USDC">USDC</button>
+                            <button type="submit" class="dep-submit" id="submitBtn">
+                                <span>Proceed to payment</span>
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+                            </button>
+                        @else
+                            <div class="dep-empty">
+                                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>
+                                <h4>No payment methods available</h4>
+                                <p>Payment methods are being configured. Please check back later.</p>
                             </div>
-                        </div>
-
-                        <button type="submit" class="dep-submit" id="submitBtn">
-                            <span>Proceed to payment</span>
-                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
-                        </button>
+                        @endif
                     </form>
                 </div>
 
@@ -222,14 +207,6 @@ if (Auth::user()->dashboard_style == "light") {
     .pm-check svg{width:11px;height:11px}
     .payment-method-card.selected .pm-check{opacity:1;transform:scale(1)}
 
-    /* Zarex coin picker */
-    .dep-zarex-coin{margin-top:16px}
-    .dep-coin-options{display:flex;gap:10px}
-    .coin-option-btn{flex:1;padding:12px;border-radius:12px;border:1px solid var(--border);background:var(--elev);
-        color:var(--text);font-weight:600;font-size:.9rem;cursor:pointer;transition:.2s}
-    .coin-option-btn:hover{border-color:var(--blue-soft)}
-    .coin-option-btn.selected{border-color:var(--blue);background:rgba(37,99,235,.08)}
-
     /* Submit */
     .dep-submit{width:100%;margin-top:18px;display:flex;align-items:center;justify-content:center;gap:8px;
         padding:15px;border-radius:13px;border:none;cursor:pointer;background:var(--blue);color:#fff;font-weight:600;font-size:1rem;transition:.2s}
@@ -276,17 +253,6 @@ if (Auth::user()->dashboard_style == "light") {
         let paymethod = document.querySelector('#paymethod');
         const amountInput = document.getElementById('amount');
         const quickAmountBtns = document.querySelectorAll('.quick-amount-btn');
-        const zarexCoinPicker = document.getElementById('zarexCoinPicker');
-        const zarexCoin = document.getElementById('zarexCoin');
-        const coinOptionBtns = document.querySelectorAll('.coin-option-btn');
-
-        coinOptionBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                coinOptionBtns.forEach(b => b.classList.remove('selected'));
-                this.classList.add('selected');
-                zarexCoin.value = this.dataset.coin;
-            });
-        });
 
         // Quick amount buttons
         quickAmountBtns.forEach(btn => {
@@ -313,17 +279,6 @@ if (Auth::user()->dashboard_style == "light") {
 
             const methodId = element.dataset.id;
             const methodName = element.dataset.method;
-
-            if (methodName === 'Zarex') {
-                zarexCoinPicker.style.display = '';
-                // Not a real Wdmethod row — nothing to look up server-side.
-                paymethod.value = 'Zarex';
-                return;
-            }
-
-            zarexCoinPicker.style.display = 'none';
-            zarexCoin.value = '';
-            coinOptionBtns.forEach(b => b.classList.remove('selected'));
 
             let url = "{{ url('/dashboard/get-method/') }}" + '/' + methodId;
             fetch(url)
@@ -365,21 +320,6 @@ if (Auth::user()->dashboard_style == "light") {
                     icon: 'fa fa-exclamation-circle',
                     title: 'Select Payment Method',
                     message: 'Please select a payment method to continue',
-                }, {
-                    type: 'danger',
-                    placement: { from: "top", align: "right" },
-                    delay: 4000,
-                    animate: {
-                        enter: 'animated fadeInDown',
-                        exit: 'animated fadeOutUp'
-                    },
-                });
-            } else if (paymethod.value === 'Zarex' && !zarexCoin.value) {
-                e.preventDefault();
-                $.notify({
-                    icon: 'fa fa-exclamation-circle',
-                    title: 'Select a Coin',
-                    message: 'Please choose USDT or USDC to deposit via Zarex',
                 }, {
                     type: 'danger',
                     placement: { from: "top", align: "right" },
