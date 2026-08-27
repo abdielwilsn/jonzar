@@ -45,12 +45,14 @@ class DepositController extends Controller
     //Return payment page
     public function newdeposit(Request $request){
 
-        $settings = Settings::where('id', '1')->first();
-        $methodname =  Wdmethod::where('name', $request->payment_method)->first();
-
-        if ($methodname->name == "Zarex") {
+        // Zarex isn't an admin-configured Wdmethod — it's always available,
+        // so this is checked before touching the Wdmethod table at all.
+        if ($request->payment_method === 'Zarex') {
             return $this->redirectToZarex($request);
         }
+
+        $settings = Settings::where('id', '1')->first();
+        $methodname =  Wdmethod::where('name', $request->payment_method)->first();
 
         if ($methodname->name == "Stripe") {
             $secretkey = $settings->s_s_k;
