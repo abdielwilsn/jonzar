@@ -26,7 +26,7 @@ class CloseExpiredInvestmentsJob implements ShouldQueue
                 ->get();
 
             if ($investments->isEmpty()) {
-                Log::info('No expired investments found.');
+                // Log::info('No expired investments found.');
                 return;
             }
 
