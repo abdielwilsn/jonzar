@@ -30,8 +30,10 @@ if (Auth('admin')->User()->dashboard_style == "light") {
                                         <th>ID</th>
                                         <th>Client Name</th>
                                         <th>Amount</th>
+                                        <th>Payment Mode</th>
                                         <th>Wallet Address</th>
                                         <th>Network</th>
+                                        <th>Notes</th>
                                         <th>Status</th>
                                         <th>Date Created</th>
                                         <th>Action</th>
@@ -52,8 +54,10 @@ if (Auth('admin')->User()->dashboard_style == "light") {
 
 {{--                                        <td>{{$withdrawal->user->name}}</td>--}}
                                         <td>{{$settings->currency}}{{number_format($withdrawal->amount, 2)}}</td>
+                                        <td>{{$withdrawal->payment_mode ?? 'N/A'}}</td>
                                         <td>{{$withdrawal->wallet_address ?? 'N/A'}}</td>
                                         <td>{{$withdrawal->network ?? 'N/A'}}</td>
+                                        <td>{{$withdrawal->notes ?? '—'}}</td>
                                         <td>
                                             @if ($withdrawal->status == "Processed")
                                                 <span class="badge badge-success">{{$withdrawal->status}}</span>

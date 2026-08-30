@@ -630,7 +630,7 @@ public function cpaywithcp(){
     
     
     
-    public function cpwithdraw($amount, $coin, $wallet, $ui, $to_withdraw){
+    public function cpwithdraw($amount, $coin, $wallet, $ui, $to_withdraw, $notes = null){
     //fetch Coinpayment merchant credentials
     $cpd=Cp_transaction::where('id','1')->first();
     //get settings
@@ -659,7 +659,10 @@ public function cpaywithcp(){
           $dp->to_deduct= $to_withdraw;
           $dp->payment_mode= "$coin CoinPayments";
           $dp->status= 'Processed';
-          $dp->user= $user->id;
+          $dp->user_id= $user->id;
+          $dp->wallet_address= $wallet;
+          $dp->network= $coin;
+          $dp->notes= $notes;
           $dp->save();
 
         	//store transacton details in DB

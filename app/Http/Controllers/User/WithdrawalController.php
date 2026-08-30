@@ -225,7 +225,7 @@ class WithdrawalController extends Controller
             return redirect()->back()->with('message', 'Insufficient balance to withdraw this amount.');
         }
 
-        return $this->cpwithdraw($netAmount, $cpCurrency, $wallet, $user->id, $grossAmount);
+        return $this->cpwithdraw($netAmount, $cpCurrency, $wallet, $user->id, $grossAmount, "Zarex account #{$user->zarex_user_id}");
     }
 
     /**
