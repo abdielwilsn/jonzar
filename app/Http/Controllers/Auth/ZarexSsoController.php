@@ -15,13 +15,15 @@ use Illuminate\Support\Str;
  * Single Sign-On handoff from Zaraex.
  *
  * Zaraex loads https://zarextrade.com/auth/zarex?code=<code> (iframe embed,
- * or a top-level redirect from their "Continue with Zaraex" flow). The code
- * is a short-lived, single-use opaque value — never the user's actual login
- * credential — so we exchange it server-to-server for the user's profile via
- * POST /zarextrade/exchange-code, authenticated with our shared API key.
- * (Previously this verified a signed JWT passed directly in the URL, but
- * that exposed the login credential itself via browser history/access logs;
- * the code+exchange indirection avoids that.)
+ * or a top-level redirect from their "Continue with Zaraex" flow, either as
+ * a fresh sign-in or as an already-logged-in user linking their account from
+ * profile settings). The code is a short-lived, single-use opaque value —
+ * never the user's actual login credential — so we exchange it
+ * server-to-server for the user's profile via POST /zarextrade/exchange-code,
+ * authenticated with our shared API key. (Previously this verified a signed
+ * JWT passed directly in the URL, but that exposed the login credential
+ * itself via browser history/access logs; the code+exchange indirection
+ * avoids that.)
  */
 class ZarexSsoController extends Controller
 {
@@ -33,6 +35,33 @@ class ZarexSsoController extends Controller
             abort(400, 'Missing SSO code.');
         }
 
+        [$zarexId, $email, $name, $kycStatus] = $this->exchangeCode($code);
+
+        // If the browser already has an active Zarextrade session, this is
+        // someone linking their Zaraex account from profile settings, not a
+        // fresh sign-in — attaching to a *different* account here would
+        // silently hijack the session into whichever account matches the
+        // Zaraex identity, which is not what "link my account" means.
+        if (Auth::check()) {
+            return $this->linkToCurrentUser($zarexId);
+        }
+
+        $user = $this->findOrCreateUser($zarexId, $email, $name, $kycStatus);
+
+        // Persistent login so the session survives inside the iframe.
+        Auth::login($user, true);
+        $request->session()->regenerate();
+
+        return redirect()->intended(config('fortify.home', '/dashboard'));
+    }
+
+    /**
+     * Redeem the one-time code for the caller's Zaraex profile fields.
+     *
+     * @return array{0: string, 1: string, 2: ?string, 3: ?string} [zarexId, email, name, kycStatus]
+     */
+    private function exchangeCode(string $code): array
+    {
         $baseUrl = config('services.zarex.api_base_url');
         $apiKey = config('services.zarex.api_key');
 
@@ -60,18 +89,39 @@ class ZarexSsoController extends Controller
             abort(422, 'Sign-in response is missing required fields.');
         }
 
-        $user = $this->findOrCreateUser(
+        return [
             $zarexId,
             $email,
             $response->json('name') !== null ? (string) $response->json('name') : null,
-            $response->json('kyc_status') !== null ? (string) $response->json('kyc_status') : null
-        );
+            $response->json('kyc_status') !== null ? (string) $response->json('kyc_status') : null,
+        ];
+    }
 
-        // Persistent login so the session survives inside the iframe.
-        Auth::login($user, true);
-        $request->session()->regenerate();
+    /**
+     * Attach a Zaraex identity to the currently logged-in Zarextrade user,
+     * refusing if either side is already linked to someone else.
+     */
+    private function linkToCurrentUser(string $zarexId): \Illuminate\Http\RedirectResponse
+    {
+        $currentUser = Auth::user();
 
-        return redirect()->intended(config('fortify.home', '/dashboard'));
+        if ($currentUser->zarex_user_id === $zarexId) {
+            return redirect()->route('profile')->with('success', 'Your Zarex account is already linked.');
+        }
+
+        if (!empty($currentUser->zarex_user_id)) {
+            return redirect()->route('profile')->with('message', 'Your account is already linked to a different Zarex account.');
+        }
+
+        $existing = User::where('zarex_user_id', $zarexId)->first();
+        if ($existing && $existing->id !== $currentUser->id) {
+            return redirect()->route('profile')->with('message', 'That Zarex account is already linked to another Zarextrade account.');
+        }
+
+        $currentUser->zarex_user_id = $zarexId;
+        $currentUser->save();
+
+        return redirect()->route('profile')->with('success', 'Your Zarex account has been linked.');
     }
 
     /**

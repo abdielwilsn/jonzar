@@ -52,6 +52,20 @@
                         </div>
                     </div>
 
+                    <!-- Zarex account link -->
+                    @if(config('services.zarex.authorize_url'))
+                        <div class="pf-card" style="margin-top:0">
+                            @if(empty(Auth::user()->zarex_user_id))
+                                <h4 style="margin-bottom:8px">Connect your Zarex account</h4>
+                                <p style="color:var(--muted);font-size:.9rem;margin-bottom:14px">Link your Zaraex account to deposit and withdraw straight from your Zarex balance.</p>
+                                <a href="{{ config('services.zarex.authorize_url') }}" class="btn-primary" style="display:inline-block;text-decoration:none">Connect Zarex account</a>
+                            @else
+                                <h4 style="margin-bottom:4px">Zarex account connected</h4>
+                                <p style="color:var(--muted);font-size:.9rem;margin:0">You can deposit and withdraw using your Zarex balance.</p>
+                            @endif
+                        </div>
+                    @endif
+
                     <!-- Settings -->
                     <ul class="nav nav-pills pf-tabs" role="tablist">
                         <li class="nav-item">
