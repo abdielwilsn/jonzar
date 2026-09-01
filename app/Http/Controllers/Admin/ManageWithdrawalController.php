@@ -209,7 +209,7 @@ class ManageWithdrawalController extends Controller
     {
         $with = Withdrawal::where('id', $id)->first();
         $method = Wdmethod::where('name', $with->payment_mode)->first();
-        $user = User::where('id', $with->user)->first();
+        $user = User::where('id', $with->user_id)->first();
         return view('admin.Withdrawals.pwithrdawal', [
             'withdrawal' => $with,
             'method' => $method,

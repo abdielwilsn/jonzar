@@ -179,13 +179,6 @@ class WithdrawalController extends Controller
             return redirect()->back()->with('message', 'Insufficient balance to withdraw this amount.');
         }
 
-        $cpCurrency = $this->coinPaymentsCurrencyFor($coin, $network);
-
-        if (!$cpCurrency) {
-            Log::error("No CoinPayments currency mapping for Zarex withdrawal: $coin/$network.");
-            return redirect()->back()->with('message', 'This coin/network is not currently supported for Zarex withdrawals.');
-        }
-
         $baseUrl = config('services.zarex.api_base_url');
         $apiKey = config('services.zarex.api_key');
 
@@ -216,7 +209,7 @@ class WithdrawalController extends Controller
         // the decrement happen as a single row-level-locked SQL statement, so
         // two concurrent requests can't both read the same balance and both
         // debit it (a lost-update that would otherwise let a user trigger two
-        // real on-chain withdrawals off a single balance).
+        // withdrawal requests off a single balance).
         $debited = User::where('id', $user->id)
             ->where('account_bal', '>=', $grossAmount)
             ->decrement('account_bal', $grossAmount);
@@ -225,31 +218,29 @@ class WithdrawalController extends Controller
             return redirect()->back()->with('message', 'Insufficient balance to withdraw this amount.');
         }
 
-        return $this->cpwithdraw($netAmount, $cpCurrency, $wallet, $user->id, $grossAmount, "Zarex account #{$user->zarex_user_id}");
-    }
+        // Not auto-sent: we only resolve the destination address here and
+        // leave it pending for admin to review and send manually, same as
+        // the generic external-wallet withdrawal flow.
+        $withdrawal = Withdrawal::create([
+            'user_id' => $user->id,
+            'amount' => $netAmount,
+            'to_deduct' => $grossAmount,
+            'payment_mode' => "Zarex {$coin}",
+            'wallet_address' => $wallet,
+            'network' => $network,
+            'notes' => "Zarex account #{$user->zarex_user_id}",
+            'status' => 'pending',
+        ]);
 
-    /**
-     * Map a Zaraex coin+network combination to the CoinPayments currency
-     * ticker used for CreateWithdrawal.
-     *
-     * IMPORTANT: verify these codes against the actual CoinPayments merchant
-     * account's supported currency list before relying on this for real
-     * withdrawals — sending on the wrong network is unrecoverable fund loss.
-     */
-    private function coinPaymentsCurrencyFor(string $coin, string $network): ?string
-    {
-        $map = [
-            'USDT' => [
-                'erc20' => 'USDT.ERC20',
-                'trc20' => 'USDT.TRC20',
-                'bep20' => 'USDT.BEP20',
-            ],
-            'USDC' => [
-                'erc20' => 'USDC.ERC20',
-            ],
-        ];
+        Mail::bcc($settings->contact_email)->send(new NewNotification((object) [
+            'message' => "A Zarex withdrawal request of {$settings->currency}{$grossAmount} is awaiting processing.",
+            'sender' => $settings->site_name,
+            'date' => \Carbon\Carbon::now(),
+            'subject' => 'Withdrawal Request',
+        ]));
 
-        return $map[$coin][$network] ?? null;
+        return redirect()->route('withdrawalsdeposits')
+            ->with('success', 'Withdrawal request submitted! Please wait while we process your request.');
     }
 
     public function cancelwithdrawal($id)
